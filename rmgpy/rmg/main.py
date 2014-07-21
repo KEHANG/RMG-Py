@@ -402,7 +402,8 @@ class RMG:
             objectsToEnlarge = []
             allTerminated = True
             for index, reactionSystem in enumerate(self.reactionSystems):
-    
+                coreSpec, coreReac, edgeSpec, edgeReac = self.reactionModel.getModelSize()
+                
                 if self.saveConcentrationProfiles:
                     csvfile = file(os.path.join(self.outputDirectory, 'solver', 'simulation_{0}_{1:d}.csv'.format(index+1, len(self.reactionModel.core.species))),'w')
                     worksheet = csv.writer(csvfile)
@@ -411,7 +412,21 @@ class RMG:
                 
                 # Conduct simulation
                 logging.info('Conducting simulation of reaction system %s...' % (index+1))
-                terminated, obj = reactionSystem.simulate(
+                if coreSpec <= 50: # To make model more complete, initially no pruning is allowed
+                    terminated, obj = reactionSystem.simulate(
+                    coreSpecies = self.reactionModel.core.species,
+                    coreReactions = self.reactionModel.core.reactions,
+                    edgeSpecies = self.reactionModel.edge.species,
+                    edgeReactions = self.reactionModel.edge.reactions,
+                    toleranceKeepInEdge = self.fluxToleranceKeepInEdge,
+                    toleranceMoveToCore = self.fluxToleranceMoveToCore,
+                    toleranceInterruptSimulation = self.fluxToleranceMoveToCore,
+                    pdepNetworks = self.reactionModel.networkList,
+                    worksheet = worksheet,
+                    absoluteTolerance = self.absoluteTolerance,
+                    relativeTolerance = self.relativeTolerance,)
+                else:
+                    terminated, obj = reactionSystem.simulate(
                     coreSpecies = self.reactionModel.core.species,
                     coreReactions = self.reactionModel.core.reactions,
                     edgeSpecies = self.reactionModel.edge.species,
@@ -422,8 +437,8 @@ class RMG:
                     pdepNetworks = self.reactionModel.networkList,
                     worksheet = worksheet,
                     absoluteTolerance = self.absoluteTolerance,
-                    relativeTolerance = self.relativeTolerance,
-                )
+                    relativeTolerance = self.relativeTolerance,)
+                
                 allTerminated = allTerminated and terminated
                 logging.info('')
                 
@@ -445,7 +460,7 @@ class RMG:
                 # species from the edge
                 if allTerminated:
                     self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
-    
+
                 # Enlarge objects identified by the simulation for enlarging
                 # These should be Species or Network objects
                 logging.info('')
