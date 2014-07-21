@@ -1099,7 +1099,7 @@ class CoreEdgeReactionModel:
                 logging.info('Pruning species {0:<56} to make numEdgeSpecies smaller than maximumEdgeSpecies'.format(self.edge.species[index]))
                 speciesToPrune.append((index, self.edge.species[index]))
             else:
-                break
+                continue
 
         # Actually do the pruning
         if pruneDueToRateCounter > 0:
