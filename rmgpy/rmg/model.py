@@ -1078,9 +1078,12 @@ class CoreEdgeReactionModel:
                     if spec not in ineligibleSpecies:
                         ineligibleSpecies.append(spec)
 
+        # Show the number of ineligible species
+        logging.info('Having {0:<56} species ineligible to prune'.format(len(ineligibleSpecies)))
+        
         # Sort the edge species rates by index
         indices = numpy.argsort(maxEdgeSpeciesRates)
-
+        
         # Determine which species to prune
         speciesToPrune = []
         pruneDueToRateCounter = 0
@@ -1091,6 +1094,8 @@ class CoreEdgeReactionModel:
                 pruneDueToRateCounter += 1
             # Keep removing species with the lowest rates until we are below the maximum edge species size
             elif numEdgeSpecies - len(speciesToPrune) > maximumEdgeSpecies and self.edge.species[index] not in ineligibleSpecies:
+                logging.info('Pruning species {0:<56} to make numEdgeSpecies smaller than maximumEdgeSpecies'.format(self.edge.species[index]))
+                logging.info('Having edge species {0:<56}, maximumEdgeSpecies {1:<56}'.format(numEdgeSpecies),maximumEdgeSpecies)
                 speciesToPrune.append((index, self.edge.species[index]))
             else:
                 break
