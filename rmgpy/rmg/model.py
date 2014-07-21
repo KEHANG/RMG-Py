@@ -1080,7 +1080,7 @@ class CoreEdgeReactionModel:
 
         # Show the number of ineligible species
         logging.info('Having {0} species ineligible to prune'.format(len(ineligibleSpecies)))
-        logging.info('Having edge species {0}, maximumEdgeSpecies {1}'.format(numEdgeSpecies),maximumEdgeSpecies)
+        logging.info('Having edge species {0}, maximumEdgeSpecies {1}'.format(numEdgeSpecies, maximumEdgeSpecies))
         
         # Sort the edge species rates by index
         indices = numpy.argsort(maxEdgeSpeciesRates)
