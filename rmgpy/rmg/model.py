@@ -1098,12 +1098,14 @@ class CoreEdgeReactionModel:
         # Actually do the pruning
         if pruneDueToRateCounter > 0:
             logging.info('Pruning {0:d} species whose rates did not exceed the minimum threshold of {1:g}'.format(pruneDueToRateCounter, fluxToleranceKeepInEdge))
-            for index, spec in speciesToPrune[0:pruneDueToRateCounter]:
+            for index, spec in speciesToPrune[0:pruneDueToRateCounter]:ui
+                logging.info('Pruning species {0:<56}'.format(spec))
                 logging.debug('    {0:<56}    {1:10.4e}'.format(spec, maxEdgeSpeciesRates[index]))
                 self.removeSpeciesFromEdge(spec)
         if len(speciesToPrune) - pruneDueToRateCounter > 0:
             logging.info('Pruning {0:d} species to obtain an edge size of {1:d} species'.format(len(speciesToPrune) - pruneDueToRateCounter, maximumEdgeSpecies))
             for index, spec in speciesToPrune[pruneDueToRateCounter:]:
+                logging.info('Pruning species {0:<56}'.format(spec))
                 logging.debug('    {0:<56}    {1:10.4e}'.format(spec, maxEdgeSpeciesRates[index]))
                 self.removeSpeciesFromEdge(spec)
 
