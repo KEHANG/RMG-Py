@@ -1093,7 +1093,7 @@ class CoreEdgeReactionModel:
             if maxEdgeSpeciesRates[index] < fluxToleranceKeepInEdge and self.edge.species[index] not in ineligibleSpecies:
                 speciesToPrune.append((index, self.edge.species[index]))
                 pruneDueToRateCounter += 1
-                logging.info('Having {0} species to prune'.format(len(speciesToPrune)))
+            logging.info('Having {0} species to prune'.format(len(speciesToPrune)))
             # Keep removing species with the lowest rates until we are below the maximum edge species size
             elif numEdgeSpecies - len(speciesToPrune) > maximumEdgeSpecies and self.edge.species[index] not in ineligibleSpecies:
                 logging.info('Pruning species {0:<56} to make numEdgeSpecies smaller than maximumEdgeSpecies'.format(self.edge.species[index]))
