@@ -454,6 +454,7 @@ class RMG:
 
             self.saveEverything()
 
+
             # Update RMG execution statistics
             logging.info('Updating RMG execution statistics...')
             coreSpec, coreReac, edgeSpec, edgeReac = self.reactionModel.getModelSize()
