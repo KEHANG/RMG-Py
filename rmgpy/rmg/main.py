@@ -453,7 +453,7 @@ class RMG:
                 self.reactionModel.enlarge(objectsToEnlarge)
 
             self.saveEverything()
-
+g
 
             # Update RMG execution statistics
             logging.info('Updating RMG execution statistics...')
