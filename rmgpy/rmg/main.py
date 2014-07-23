@@ -402,8 +402,7 @@ class RMG:
             objectsToEnlarge = []
             allTerminated = True
             for index, reactionSystem in enumerate(self.reactionSystems):
-                coreSpec, coreReac, edgeSpec, edgeReac = self.reactionModel.getModelSize()
-                
+                                
                 if self.saveConcentrationProfiles:
                     csvfile = file(os.path.join(self.outputDirectory, 'solver', 'simulation_{0}_{1:d}.csv'.format(index+1, len(self.reactionModel.core.species))),'w')
                     worksheet = csv.writer(csvfile)
@@ -412,21 +411,7 @@ class RMG:
                 
                 # Conduct simulation
                 logging.info('Conducting simulation of reaction system %s...' % (index+1))
-                if coreSpec <= 50: # To make model more complete, initially no pruning is allowed
-                    terminated, obj = reactionSystem.simulate(
-                    coreSpecies = self.reactionModel.core.species,
-                    coreReactions = self.reactionModel.core.reactions,
-                    edgeSpecies = self.reactionModel.edge.species,
-                    edgeReactions = self.reactionModel.edge.reactions,
-                    toleranceKeepInEdge = self.fluxToleranceKeepInEdge,
-                    toleranceMoveToCore = self.fluxToleranceMoveToCore,
-                    toleranceInterruptSimulation = self.fluxToleranceMoveToCore,
-                    pdepNetworks = self.reactionModel.networkList,
-                    worksheet = worksheet,
-                    absoluteTolerance = self.absoluteTolerance,
-                    relativeTolerance = self.relativeTolerance,)
-                else:
-                    terminated, obj = reactionSystem.simulate(
+                terminated, obj = reactionSystem.simulate(
                     coreSpecies = self.reactionModel.core.species,
                     coreReactions = self.reactionModel.core.reactions,
                     edgeSpecies = self.reactionModel.edge.species,
@@ -438,6 +423,7 @@ class RMG:
                     worksheet = worksheet,
                     absoluteTolerance = self.absoluteTolerance,
                     relativeTolerance = self.relativeTolerance,)
+                    
                 
                 allTerminated = allTerminated and terminated
                 logging.info('')
@@ -468,8 +454,6 @@ class RMG:
                 self.reactionModel.enlarge(objectsToEnlarge)
 
             self.saveEverything()
-g
-
             # Update RMG execution statistics
             logging.info('Updating RMG execution statistics...')
             coreSpec, coreReac, edgeSpec, edgeReac = self.reactionModel.getModelSize()
