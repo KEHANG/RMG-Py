@@ -41,6 +41,7 @@ import time
 import shutil
 import numpy
 import csv
+import gc
 try:
     import xlwt
 except ImportError:
@@ -395,6 +396,7 @@ class RMG:
 
         self.done = False
         self.saveEverything()
+        pruneCounter = 0
         # Main RMG loop
         while not self.done:
                 
@@ -459,7 +461,11 @@ class RMG:
                 # If we reached our termination conditions, then try to prune
                 # species from the edge
                 if allTerminated:
+                    pruneCounter = pruneCounter + 1
                     self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
+                    if (pruneCounter % 2) == 1:
+                        collected = gc.collect()
+                        logging.info('Garbage collector: collected %d objects.' % (collected))
     
                 # Enlarge objects identified by the simulation for enlarging
                 # These should be Species or Network objects
