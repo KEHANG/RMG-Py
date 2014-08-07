@@ -1095,7 +1095,7 @@ class CoreEdgeReactionModel:
                 pruneDueToRateCounter += 1
             # Keep removing species with the lowest rates until we are below the maximum edge species size
             elif numEdgeSpecies - len(speciesToPrune) > maximumEdgeSpecies and self.edge.species[index] not in ineligibleSpecies:
-                 speciesToPrune.append((index, self.edge.species[index]))
+                speciesToPrune.append((index, self.edge.species[index]))
             else:
                 continue
         logging.info('Having {0} species to prune'.format(len(speciesToPrune)))
