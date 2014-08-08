@@ -464,8 +464,22 @@ class RMG:
                     pruneCounter = pruneCounter + 1
                     self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
                     if (pruneCounter % 2) == 1:
+                        try:
+                            import psutil
+                            process = psutil.Process(os.getpid())
+                            rss, vms = process.get_memory_info()
+                            logging.info('    Memory used before GC: %.2f MB' % (rss / 1.0e6))
+                        except ImportError:
+                            logging.info('    Memory used before GC: Unkonwn MB')
                         collected = gc.collect()
                         logging.info('Garbage collector: collected %d objects.' % (collected))
+                        try:
+                            import psutil
+                            process = psutil.Process(os.getpid())
+                            rss, vms = process.get_memory_info()
+                            logging.info('    Memory used after GC: %.2f MB' % (rss / 1.0e6))
+                        except ImportError:
+                            logging.info('    Memory used after GC: Unkonwn MB')
     
                 # Enlarge objects identified by the simulation for enlarging
                 # These should be Species or Network objects
