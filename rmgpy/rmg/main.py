@@ -422,7 +422,7 @@ class RMG:
                 
                 # Conduct simulation
                 logging.info('Conducting simulation of reaction system %s...' % (index+1))
-                if coreSpec <= 1: # To make model more complete, initially no pruning is allowed
+                if coreSpec <= 50: # To make model more complete, initially no pruning is allowed
                     terminated, obj = reactionSystem.simulate(
                     coreSpecies = self.reactionModel.core.species,
                     coreReactions = self.reactionModel.core.reactions,
