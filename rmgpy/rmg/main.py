@@ -382,6 +382,14 @@ class RMG:
         Execute an RMG job using the command-line arguments `args` as returned
         by the :mod:`argparse` package.
         """
+        from pympler.classtracker import ClassTracker
+
+        from pympler.classtracker_stats import HtmlStats
+
+        tracker = ClassTracker()
+        tracker.track_class(Species)
+        tracker.create_snapshot()
+
     
         self.initialize(args)
         
@@ -414,7 +422,7 @@ class RMG:
                 
                 # Conduct simulation
                 logging.info('Conducting simulation of reaction system %s...' % (index+1))
-                if coreSpec <= 50: # To make model more complete, initially no pruning is allowed
+                if coreSpec <= 1: # To make model more complete, initially no pruning is allowed
                     terminated, obj = reactionSystem.simulate(
                     coreSpecies = self.reactionModel.core.species,
                     coreReactions = self.reactionModel.core.reactions,
@@ -486,8 +494,9 @@ class RMG:
                 logging.info('')
                 objectsToEnlarge = list(set(objectsToEnlarge))
                 self.reactionModel.enlarge(objectsToEnlarge)
+                tracker.create_snapshot()
 
-            self.saveEverything()
+            # self.saveEverything()
 
             # Update RMG execution statistics
             logging.info('Updating RMG execution statistics...')
@@ -580,6 +589,8 @@ class RMG:
         coreSpec, coreReac, edgeSpec, edgeReac = self.reactionModel.getModelSize()
         logging.info('The final model core has %s species and %s reactions' % (coreSpec, coreReac))
         logging.info('The final model edge has %s species and %s reactions' % (edgeSpec, edgeReac))
+
+        HtmlStats(tracker=tracker).create_html('RMG-MemoryProfile.html')
         
         self.finish()
         

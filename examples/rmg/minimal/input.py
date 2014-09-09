@@ -34,9 +34,9 @@ simulator(
 )
 
 model(
-    toleranceKeepInEdge=0.0,
+    toleranceKeepInEdge=0.01,
     toleranceMoveToCore=0.1,
-    toleranceInterruptSimulation=0.1,
+    toleranceInterruptSimulation=1e9,
     maximumEdgeSpecies=100000
 )
 
