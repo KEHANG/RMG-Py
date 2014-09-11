@@ -422,7 +422,7 @@ class RMG:
                 
                 # Conduct simulation
                 logging.info('Conducting simulation of reaction system %s...' % (index+1))
-                if coreSpec <= 50: # To make model more complete, initially no pruning is allowed
+                if coreSpec <= 1: # To make model more complete, initially no pruning is allowed
                     terminated, obj = reactionSystem.simulate(
                     coreSpecies = self.reactionModel.core.species,
                     coreReactions = self.reactionModel.core.reactions,
@@ -471,6 +471,7 @@ class RMG:
                 if allTerminated:
                     pruneCounter = pruneCounter + 1
                     tracker.create_snapshot('before pruning')
+
                     self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
                     tracker.create_snapshot('after pruning')
                     if (pruneCounter % 2) == 1:
@@ -483,6 +484,7 @@ class RMG:
                             logging.info('    Memory used before GC: Unkonwn MB')
                         collected = gc.collect()
                         logging.info('Garbage collector: collected %d objects.' % (collected))
+                        tracker.create_snapshot('after gc')
                         try:
                             import psutil
                             process = psutil.Process(os.getpid())
@@ -490,12 +492,14 @@ class RMG:
                             logging.info('    Memory used after GC: %.2f MB' % (rss / 1.0e6))
                         except ImportError:
                             logging.info('    Memory used after GC: Unkonwn MB')
+
     
                 # Enlarge objects identified by the simulation for enlarging
                 # These should be Species or Network objects
                 logging.info('')
                 objectsToEnlarge = list(set(objectsToEnlarge))
                 self.reactionModel.enlarge(objectsToEnlarge)
+                tracker.create_snapshot('after enlargement')
 
 
             # self.saveEverything()

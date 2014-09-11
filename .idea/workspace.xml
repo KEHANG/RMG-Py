@@ -42,8 +42,8 @@
       <file leaf-file-name="main.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/rmgpy/rmg/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.5737463" vertical-offset="9863" max-vertical-offset="26884">
-              <caret line="474" column="58" selection-start-line="474" selection-start-column="58" selection-end-line="474" selection-end-column="58" />
+            <state vertical-scroll-proportion="-0.39970502" vertical-offset="10787" max-vertical-offset="26972">
+              <caret line="486" column="57" selection-start-line="486" selection-start-column="57" selection-end-line="486" selection-end-column="57" />
               <folding />
             </state>
           </provider>
@@ -52,8 +52,8 @@
       <file leaf-file-name="input.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/examples/rmg/minimal/input.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="330" max-vertical-offset="1232">
-              <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="396" max-vertical-offset="1232">
+              <caret line="25" column="22" selection-start-line="25" selection-start-column="22" selection-end-line="25" selection-end-column="22" />
               <folding />
             </state>
           </provider>
@@ -565,14 +565,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/examples/rmg/minimal/input.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="330" max-vertical-offset="1232">
-          <caret line="29" column="0" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/rmgpy/rmg/model.py">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0" vertical-offset="22566" max-vertical-offset="38566">
@@ -581,10 +573,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/examples/rmg/minimal/input.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.0" vertical-offset="396" max-vertical-offset="1232">
+          <caret line="25" column="22" selection-start-line="25" selection-start-column="22" selection-end-line="25" selection-end-column="22" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/rmgpy/rmg/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.5737463" vertical-offset="9863" max-vertical-offset="26884">
-          <caret line="474" column="58" selection-start-line="474" selection-start-column="58" selection-end-line="474" selection-end-column="58" />
+        <state vertical-scroll-proportion="-0.39970502" vertical-offset="10787" max-vertical-offset="26972">
+          <caret line="486" column="57" selection-start-line="486" selection-start-column="57" selection-end-line="486" selection-end-column="57" />
           <folding />
         </state>
       </provider>
