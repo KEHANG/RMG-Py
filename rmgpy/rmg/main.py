@@ -470,7 +470,9 @@ class RMG:
                 # species from the edge
                 if allTerminated:
                     pruneCounter = pruneCounter + 1
+                    tracker.create_snapshot('before pruning')
                     self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
+                    tracker.create_snapshot('after pruning')
                     if (pruneCounter % 2) == 1:
                         try:
                             import psutil
@@ -494,7 +496,7 @@ class RMG:
                 logging.info('')
                 objectsToEnlarge = list(set(objectsToEnlarge))
                 self.reactionModel.enlarge(objectsToEnlarge)
-                tracker.create_snapshot()
+
 
             # self.saveEverything()
 

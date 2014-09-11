@@ -2,20 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="784b2d18-b6f5-4ef8-9869-7f043ce7efbb" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/RMG-Py.iml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/encodings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/scopes/scope_settings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/.idea/vcs.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rmgpy/solver/base.pxd" afterPath="$PROJECT_DIR$/rmgpy/solver/base.pxd" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rmgpy/solver/base.pyx" afterPath="$PROJECT_DIR$/rmgpy/solver/base.pyx" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/documentation/source/theory/index.rst" afterPath="$PROJECT_DIR$/documentation/source/theory/index.rst" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/documentation/source/theory/rmg/index.rst" afterPath="$PROJECT_DIR$/documentation/source/theory/rmg/index.rst" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/examples/rmg/minimal/input.py" afterPath="$PROJECT_DIR$/examples/rmg/minimal/input.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rmgpy/rmg/main.py" afterPath="$PROJECT_DIR$/rmgpy/rmg/main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rmgpy/rmg/model.py" afterPath="$PROJECT_DIR$/rmgpy/rmg/model.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/rmgpy/data/thermo.py" afterPath="$PROJECT_DIR$/rmgpy/data/thermo.py" />
     </list>
     <ignored path="RMG-Py.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -42,21 +29,21 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="model.py" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="model.py" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/rmgpy/rmg/model.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-0.15339233" vertical-offset="22830" max-vertical-offset="38566">
+            <state vertical-scroll-proportion="0.0" vertical-offset="22566" max-vertical-offset="38566">
               <caret line="1039" column="8" selection-start-line="1039" selection-start-column="8" selection-end-line="1039" selection-end-column="8" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="main.py" pinned="false" current="false" current-in-tab="false">
+      <file leaf-file-name="main.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/rmgpy/rmg/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.0" vertical-offset="8609" max-vertical-offset="26840">
-              <caret line="444" column="71" selection-start-line="444" selection-start-column="71" selection-end-line="444" selection-end-column="71" />
+            <state vertical-scroll-proportion="0.5737463" vertical-offset="9863" max-vertical-offset="26884">
+              <caret line="474" column="58" selection-start-line="474" selection-start-column="58" selection-end-line="474" selection-end-column="58" />
               <folding />
             </state>
           </provider>
@@ -586,18 +573,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/rmgpy/rmg/main.py">
+    <entry file="file://$PROJECT_DIR$/rmgpy/rmg/model.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.0" vertical-offset="8609" max-vertical-offset="26840">
-          <caret line="444" column="71" selection-start-line="444" selection-start-column="71" selection-end-line="444" selection-end-column="71" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="22566" max-vertical-offset="38566">
+          <caret line="1039" column="8" selection-start-line="1039" selection-start-column="8" selection-end-line="1039" selection-end-column="8" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/rmgpy/rmg/model.py">
+    <entry file="file://$PROJECT_DIR$/rmgpy/rmg/main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-0.15339233" vertical-offset="22830" max-vertical-offset="38566">
-          <caret line="1039" column="8" selection-start-line="1039" selection-start-column="8" selection-end-line="1039" selection-end-column="8" />
+        <state vertical-scroll-proportion="0.5737463" vertical-offset="9863" max-vertical-offset="26884">
+          <caret line="474" column="58" selection-start-line="474" selection-start-column="58" selection-end-line="474" selection-end-column="58" />
           <folding />
         </state>
       </provider>
