@@ -556,23 +556,29 @@ class KineticsFamily(Database):
         self.rules = KineticsRules(label='{0}/rules'.format(self.label))
         logging.debug("Loading kinetics family rules from {0}".format(os.path.join(path, 'rules.py')))
         self.rules.load(os.path.join(path, 'rules.py'), local_context, global_context)
-        
+        # load the groups indicated in the entry label
+        for label, entries in self.rules.entries.iteritems():
+            nodes = label.split(';')
+            reactants = [self.groups.entries[node] for node in nodes]
+            reaction = Reaction(reactants=reactants, products=[])
+            for entry in entries:
+                entry.item = reaction
         self.depositories = []
         
         if depositoryLabels=='all':
             # Load everything. This option is generally used for working with the database
             # load all the remaining depositories, in order returned by os.walk
             for root, dirs, files in os.walk(path):
-                for f in files:
-                    if not f.endswith('.py'): continue
-                    name = f.split('.py')[0]
-                    if name not in ['groups', 'rules']:
-                        fpath = os.path.join(path, f)
-                        label = '{0}/{1}'.format(self.label, name)
-                        depository = KineticsDepository(label=label)
-                        logging.debug("Loading kinetics family depository from {0}".format(fpath))
-                        depository.load(fpath, local_context, global_context)
-                        self.depositories.append(depository)
+                for name in dirs:
+                    #if not f.endswith('.py'): continue
+                    #name = f.split('.py')[0]
+                    #if name not in ['groups', 'rules']:
+                    fpath = os.path.join(path, name, 'reactions.py')
+                    label = '{0}/{1}'.format(self.label, name)
+                    depository = KineticsDepository(label=label)
+                    logging.debug("Loading kinetics family depository from {0}".format(fpath))
+                    depository.load(fpath, local_context, global_context)
+                    self.depositories.append(depository)
             return
                     
         if not depositoryLabels:
@@ -591,8 +597,8 @@ class KineticsFamily(Database):
             if name == '!training':
                 continue
             label = '{0}/{1}'.format(self.label, name)
-            f = name+'.py'
-            fpath = os.path.join(path,f)
+            #f = name+'.py'
+            fpath = os.path.join(path, name, 'reactions.py')
             if not os.path.exists(fpath):
                 logging.warning("Requested depository {0} does not exist".format(fpath))
                 continue
@@ -644,14 +650,15 @@ class KineticsFamily(Database):
         self.saveGroups(os.path.join(path, 'groups.py'), entryName=entryName)
         self.rules.save(os.path.join(path, 'rules.py'))
         for depository in self.depositories:
-            self.saveDepository(depository, os.path.join(path, '{0}.py'.format(depository.label[len(self.label)+1:])))
+            self.saveDepository(depository, os.path.join(path, '{0}'.format(depository.label[len(self.label)+1:])))
     
     def saveDepository(self, depository, path):
         """
         Save the given kinetics family `depository` to the location `path` on
         disk.
         """
-        depository.save(os.path.join(path))        
+        depository.saveDictionary(os.path.join(path,'dictionary.txt'))
+        depository.save(os.path.join(path,'reactions.py'))
         
     def saveGroups(self, path, entryName='entry'):
         """
@@ -841,7 +848,7 @@ class KineticsFamily(Database):
         reverse_entries = []
         for entry in entries:
             try:        
-                template = self.getReactionTemplate(deepcopy(entry.item))
+                template = self.getReactionTemplate(entry.item)
             except UndeterminableKineticsError:
                 # Some entries might be stored in the reverse direction for
                 # this family; save them so we can try this
@@ -886,7 +893,7 @@ class KineticsFamily(Database):
             data.changeT0(1)
             
             # Estimate the thermo for the reactants and products
-            item = Reaction(reactants=[m.copy(deep=True) for m in entry.item.reactants], products=[m.copy(deep=True) for m in entry.item.products])
+            item = Reaction(reactants=[m.molecule[0].copy(deep=True) for m in entry.item.reactants], products=[m.molecule[0].copy(deep=True) for m in entry.item.products])
             item.reactants = [Species(molecule=[m]) for m in item.reactants]
             for reactant in item.reactants:
                 reactant.generateResonanceIsomers()
@@ -899,7 +906,7 @@ class KineticsFamily(Database):
             item.kinetics = data
             data = item.generateReverseRateCoefficient()
             
-            item = Reaction(reactants=[m.copy(deep=True) for m in entry.item.products], products=[m.copy(deep=True) for m in entry.item.reactants])
+            item = Reaction(reactants=[m.molecule[0].copy(deep=True) for m in entry.item.products], products=[m.molecule[0].copy(deep=True) for m in entry.item.reactants])
             template = self.getReactionTemplate(item)
             item.degeneracy = self.calculateDegeneracy(item)
             
@@ -1141,172 +1148,79 @@ class KineticsFamily(Database):
 
         
         # Generate other possible electronic states
-        electronicStructuresList1 = []
-        electronicStructuresList2 = []
+        productStructuresList = []
+        totalSpin = [] # total spin times 2
         
-        struct1 = productStructures[0]
-        struct1a = struct1.copy(True)
-        struct1a.updateAtomTypes()
-        electronicStructuresList1.append(struct1a)
-        atoms1 = struct1.getRadicalAtoms()
-        
-        for atom1 in atoms1:
+        # implement Angular Momentum Addition Theorem
+        if len(reactantStructures) == 1:
             
-            radical1 = atom1.radicalElectrons
-            spin1 = atom1.spinMultiplicity
+            totalSpin = [(reactantStructures[0].multiplicity-1.0)/2.0]
             
-            if atom1.label != '' and radical1 > 1 and radical1 < 4:
-                
-                if radical1 == 2 and spin1 == 3:
-                    atom1.setSpinMultiplicity(1)
-                    struct1a = struct1.copy(True)
-                    struct1a.updateAtomTypes()
-                elif radical1 == 2 and spin1 == 1:
-                    atom1.setSpinMultiplicity(3)
-                    struct1a = struct1.copy(True)
-                    struct1a.updateAtomTypes()
-                elif radical1 == 3 and spin1 == 4:
-                    atom1.setSpinMultiplicity(2)
-                    struct1a = struct1.copy(True)
-                    struct1a.updateAtomTypes()
-                elif radical1 == 3 and spin1 == 2:
-                    atom1.setSpinMultiplicity(4)
-                    struct1a = struct1.copy(True)
-                    struct1a.updateAtomTypes()
-                
-                for electronicStructures in electronicStructuresList1:
-                    if electronicStructures.isIsomorphic(struct1a):
-                        break
-                else:
-                    electronicStructuresList1.append(struct1a)
+        elif len(reactantStructures) == 2:
             
-            elif radical1 == 4:
+            spin1 = (reactantStructures[0].multiplicity-1.0)/2.0
+            spin2 = (reactantStructures[1].multiplicity-1.0)/2.0
+            
+            count = 0.0
+            
+            while (spin1+spin2-count) >= abs(spin1-spin2):
                 
-                if spin1 == 5:
-                    atom1.setSpinMultiplicity(3)
-                    struct1a = struct1.copy(True)
-                    struct1a.updateAtomTypes()
+                totalSpin.append(spin1+spin2-count)
+                                
+                count += 1
+            
+        if len(productStructures) == 1:
+            
+            maxSpin1 = productStructures[0].getRadicalCount()/2.0
+            
+            count = 0.0
+            
+            while (maxSpin1-count) >= 0.0:
                 
-                    atom1.setSpinMultiplicity(1)
-                    struct1b = struct1.copy(True)
-                    struct1b.updateAtomTypes()
-                elif spin1 == 3:
-                    atom1.setSpinMultiplicity(5)
-                    struct1a = struct1.copy(True)
-                    struct1a.updateAtomTypes()
+                if (maxSpin1-count) in totalSpin:
                 
-                    atom1.setSpinMultiplicity(1)
-                    struct1b = struct1.copy(True)
-                    struct1b.updateAtomTypes()
-                elif spin1 == 1:
-                    atom1.setSpinMultiplicity(5)
-                    struct1a = struct1.copy(True)
-                    struct1a.updateAtomTypes()
+                    struct = productStructures[0].copy(deep=True)
                 
-                    atom1.setSpinMultiplicity(3)
-                    struct1b = struct1.copy(True)
-                    struct1b.updateAtomTypes()
+                    struct.multiplicity = int((maxSpin1-count)*2.0+1.0)
                     
-                for electronicStructures in electronicStructuresList1:
-                    if electronicStructures.isIsomorphic(struct1a):
-                        break
-                else:
-                    electronicStructuresList1.append(struct1a)
+                    if not self.isMoleculeForbidden(struct):
+                        productStructuresList.append([struct])
                     
-                for electronicStructures in electronicStructuresList1:
-                    if electronicStructures.isIsomorphic(struct1b):
-                        break
-                else:
-                    electronicStructuresList1.append(struct1b)
-                            
-        if len(productStructures) == 2:
-        
-            struct2 = productStructures[1]
-            struct2a = struct2.copy(True)
-            struct2a.updateAtomTypes()
-            electronicStructuresList2.append(struct2a)
-            atoms2 = struct2.getRadicalAtoms()
-        
-            for atom2 in atoms2:
-            
-                radical2 = atom2.radicalElectrons
-                spin2 = atom2.spinMultiplicity
-            
-                if atom2.label != '' and radical2 > 1 and radical2 < 4:
+                count += 1.0
                     
-                    if radical2 == 2 and spin2 == 3:
-                        atom2.setSpinMultiplicity(1)
-                        struct2a = struct2.copy(True)
-                        struct2a.updateAtomTypes()
-                    elif radical2 == 2 and spin2 == 1:
-                        atom2.setSpinMultiplicity(3)
-                        struct2a = struct2.copy(True)
-                        struct2a.updateAtomTypes()
-                    elif radical2 == 3 and spin2 == 4:
-                        atom2.setSpinMultiplicity(2)
-                        struct2a = struct2.copy(True)
-                        struct2a.updateAtomTypes()
-                    elif radical2 == 3 and spin2 == 2:
-                        atom2.setSpinMultiplicity(4)
-                        struct2a = struct2.copy(True)
-                        struct2a.updateAtomTypes()
-                
-                    for electronicStructures in electronicStructuresList2:
-                        if electronicStructures.isIsomorphic(struct2a):
-                            break
-                    else:
-                        electronicStructuresList2.append(struct2a)
+        elif len(productStructures) == 2:
             
-                elif radical2 == 4:
+            maxSpin1 = productStructures[0].getRadicalCount()/2.0
+            maxSpin2 = productStructures[1].getRadicalCount()/2.0
+            
+            count1 = 0.0
+            
+            while (maxSpin1-count1) >= 0.0:
                 
-                    if spin2 == 5:
-                        atom2.setSpinMultiplicity(3)
-                        struct2a = struct2.copy(True)
-                        struct2a.updateAtomTypes()
+                count2 = 0.0
                 
-                        atom2.setSpinMultiplicity(1)
-                        struct2b = struct2.copy(True)
-                        struct2b.updateAtomTypes()
-                    elif spin2 == 3:
-                        atom2.setSpinMultiplicity(5)
-                        struct2a = struct2.copy(True)
-                        struct2a.updateAtomTypes()
-                
-                        atom2.setSpinMultiplicity(1)
-                        struct2b = struct2.copy(True)
-                        struct2b.updateAtomTypes()
-                    elif spin2 == 1:
-                        atom2.setSpinMultiplicity(5)
-                        struct2a = struct2.copy(True)
-                        struct2a.updateAtomTypes()
-                
-                        atom2.setSpinMultiplicity(3)
-                        struct2b = struct2.copy(True)
-                        struct2b.updateAtomTypes()
+                while (maxSpin2-count2) >= 0.0:
                     
-                    for electronicStructures in electronicStructuresList2:
-                        if electronicStructures.isIsomorphic(struct2a):
-                            break
-                    else:
-                        electronicStructuresList2.append(struct2a)
+                    count = 0.0
+                
+                    while (maxSpin1-count1+maxSpin2-count2-count) >= abs((maxSpin1-count1)-(maxSpin2-count2)):
+                        
+                        if (maxSpin1-count1+maxSpin2-count2-count) in totalSpin:
+                
+                            struct1 = productStructures[0].copy(deep=True)
+                            struct2 = productStructures[1].copy(deep=True)
+                
+                            struct1.multiplicity = int((maxSpin1-count1)*2.0+1.0)
+                            struct2.multiplicity = int((maxSpin2-count2)*2.0+1.0)
+                                
+                            if not self.isMoleculeForbidden(struct1) and not self.isMoleculeForbidden(struct2):
+                                productStructuresList.append([struct1,struct2])
+                        
+                        count += 1.0
+                        
+                    count2 += 1.0
                     
-                    for electronicStructures in electronicStructuresList2:
-                        if electronicStructures.isIsomorphic(struct2b):
-                            break
-                    else:
-                        electronicStructuresList2.append(struct2b)
-        
-        if len(productStructures) == 2:
-            
-            for structa in electronicStructuresList1:
-                for structb in electronicStructuresList2:
-                    if not (self.isMoleculeForbidden(structa) or self.isMoleculeForbidden(structb)):
-                        productStructuresList.append([structa,structb])
-        elif len(productStructures) == 1:
-            
-            for structa in electronicStructuresList1:
-                if not (self.isMoleculeForbidden(structa)):
-                    productStructuresList.append([structa])
+                count1 += 1.0
                     
         return productStructuresList
 
@@ -1775,8 +1689,8 @@ class KineticsFamily(Database):
         kineticsList = []
         entries = depository.entries.values()
         for entry in entries:
-            if reaction.isIsomorphic(entry.item):
-                kineticsList.append([deepcopy(entry.data), entry, reaction.isIsomorphic(entry.item, eitherDirection=False)])
+            if entry.item.isIsomorphic(reaction):
+                kineticsList.append([deepcopy(entry.data), entry, entry.item.isIsomorphic(reaction, eitherDirection=False)])
         for kinetics, entry, isForward in kineticsList:
             if kinetics is not None:
                 kinetics.comment += "Matched reaction {0} {1} in {2}".format(entry.index, entry.label, depository.label)
@@ -1927,159 +1841,3 @@ class KineticsFamily(Database):
             return 's^-1'
         else:
             raise ValueError('Unable to determine units of rate coefficient for reaction family "{0}".'.format(self.label))
-    
-    def checkWellFormed(self):
-        """
-        Finds and logs the following errors:
-        
-        -Groups named in rules.py that do not exist in groups.py
-        -Groups named i rules.py that do not share the same definitions
-        as its corresponding entry in groups.py
-        -Groups (in groups.py) that do not exist in the tree
-        -Groups (in groups.py) which are not actually subgroups of their
-        stated parent. 
-        
-        The errors are logged into a logger object with the handle 'databaseLog'
-        """
-        #A function to add to the not in Subgroup dictionary
-        def appendToDict(dictionary, key, value):
-            if key not in dictionary:
-                dictionary[key]=[value]
-            else:
-                dictionary[key].append(value) 
-            return dictionary
-        
-        databaseLog=logging.getLogger('databaseLog')
-        #list of nodes that are not wellFormed
-        notInTree=[]
-        
-        # Give correct arguments for each type of database
-#         if isinstance(self, KineticsFamily):
-        library=self.rules.entries
-        groups=self.groups.entries
-        groupsCopy=copy(groups)
-        topNodes=self.getRootTemplate()
-
-        # Make list of all node names in library
-        libraryNodes=[]
-        for nodes in library:
-            libraryNodes.append(nodes)
-
-        try:
-            #Each label in rules.py should be be in the form group1;group2;group3 etc
-            #and each group must appear in groups.py
-            for label, libraryEntries in library.iteritems():
-                for entry in libraryEntries:
-                    assert label == entry.label
-                    # Check that the groups are what we expect based on the name.
-                    expectedNodeNames = label.split(';')
-                    try:
-                        if len(expectedNodeNames) != len(entry.item.reactants):
-                            raise DatabaseError("Wrong number of semicolons in label")
-                        for expectedNodeName, actualNode in zip(expectedNodeNames, entry.item.reactants):
-                            if expectedNodeName not in groups:
-                                raise DatabaseError("No group definition for label '{label}'".format(label=expectedNodeName))
-                            expectedNode = groups[expectedNodeName].item
-                            if isinstance(actualNode, Group):
-                                if not (isinstance(expectedNode, Group) and expectedNode.isIdentical(actualNode)):
-                                    raise DatabaseError("Group definition doesn't match label '{label}'".format(label=expectedNodeName))
-                            elif isinstance(actualNode, LogicOr):
-                                if not (isinstance(expectedNode, LogicOr) and expectedNode.matchLogicOr(actualNode)):
-                                    raise DatabaseError("Group definition doesn't match label '{label}'".format(label=expectedNodeName, node=expectedNode))
-                    except DatabaseError, e:
-                        "Didn't pass"
-                        databaseLog.error("Label '{label}' appears to be wrong on entry {index}".format(label=label, index=entry.index))
-                        databaseLog.error(e)
-                    else: 
-                        "Passed"
-                        continue # with next entry
-                    
-                    # We failed the name test. Find correct name, if possible
-                    correctNodeNames = []
-                    for actualGroup in entry.item.reactants:
-                        for groupName, groupEntry in groups.iteritems():
-                            potentialGroup = groupEntry.item
-                            if isinstance(actualGroup, Group) and isinstance(potentialGroup, Group) and potentialGroup.isIdentical(actualGroup):
-                                break
-                            elif isinstance(actualGroup, LogicOr) and isinstance(potentialGroup, LogicOr) and potentialGroup.matchLogicOr(actualGroup):
-                                break
-                        else:
-                            "We didn't break, so we didn't find a match"
-                            groupName = 'UNKNOWN'
-                        correctNodeNames.append(groupName)
-                    correctName = ';'.join(correctNodeNames)
-                    databaseLog.error("Entry {index} called '{label}' should probably be called '{correct}' or the group definitions changed.".format(label=label, index=entry.index, correct=correctName))
-                
-            # Each group in groups.py should appear in the tree
-            # This is true when ascending through parents leads to a top node
-            for nodeName in groups:
-                nodeGroup=self.groups.entries[nodeName]
-                nodeGroupItem=nodeGroup.item
-                ascendParent=nodeGroup
-                while ascendParent not in topNodes:
-                    child=ascendParent
-                    ascendParent=ascendParent.parent
-                    if ascendParent is None or child not in ascendParent.children:
-                        #These are typically products of the recipe
-                        if child.index==-1:
-                            for product in self.forwardTemplate.products:
-                                #If it is a product, ignore it
-                                if re.match(re.escape(product.label)+'[0-9]*', child.label):
-                                    break
-                            else: notInTree.append(child.label)
-                            break
-                        else:
-                        # If a group is not in a tree, we want to save the uppermost parent, not necessarily the original node
-                            notInTree.append(child.label)
-                            break
-                        
-                #each node should also be unique:
-                del groupsCopy[nodeName]
-                for nodeName2 in groupsCopy:
-                    nodeGroup2Item=self.groups.entries[nodeName2].item
-                    if isinstance(nodeGroup2Item, Group) and isinstance(nodeGroupItem, Group):
-                        if nodeGroupItem.isIdentical(nodeGroup2Item):
-                            databaseLog.error("{0} is not unique. It shares its definition with {1}".format(nodeName, nodeName2))
-                    if isinstance(nodeGroup2Item, LogicOr) and isinstance(nodeGroupItem, LogicOr):
-                        if nodeGroupItem.matchLogicOr(nodeGroup2Item):
-                            databaseLog.error("{0} is not unique. It shares its definition with {1}".format(nodeName, nodeName2))
-                    
-                #For a correct child-parent relationship, each atom in the parent should have a corresponding child atom in the child.
-                nodeParent=nodeGroup.parent
-                #Atoms may be in a different order initially. Need to sort both child and parent first
-                #Don't need to do check for topNodes
-                if nodeParent is not None:                         
-                    if isinstance(nodeParent.item, LogicOr):
-                        if not nodeGroup.label in nodeParent.item.components:
-                            #-1 index means the child is not in the LogicOr
-                            databaseLog.error("{0}'s definition is not a subgroup of its stated parent, {1}. The child definition is".format(nodeName, nodeParent.label))
-                            databaseLog.error("{0}".format(groups[nodeName].item.toAdjacencyList()))
-                            databaseLog.error("The parent {0} definition is".format(nodeParent.label))
-                            databaseLog.error("{0}".format(nodeParent.item))
-                            continue
-                        else:
-                            #if the parent is a LogicOr, we want to keep ascending until we get to a group or hit a discontinuity (could be
-                            #malformed tree or just ascending past the top node)
-                            while isinstance(nodeParent.item, LogicOr):
-                                nodeParent=nodeParent.parent
-                                if nodeParent == None: break
-                        if nodeParent == None: continue
-#                         nodeParent.item.sortAtoms()
-                    elif isinstance(nodeGroup.item, LogicOr):
-                        databaseLog.error("{0} is an intermediate LogicOr. See if it can be replaced with a adj list.".format(nodeName))
-                        print nodeGroup, ' is an intermediate LogicOr. See if it can be replaced with a adj list.'
-                        continue
-                    #If both the parent and child are graphs, we can use the function isSubgroupIsomorphic if it is actually a child
-                    if not nodeGroup.item.isSubgraphIsomorphic(nodeParent.item):
-                        databaseLog.error("{0}'s definition is not a subgroup of its stated parent, {1}. The child definition is".format(nodeName, nodeParent.label))
-                        databaseLog.error("{0}".format(groups[nodeName].item.toAdjacencyList()))
-                        databaseLog.error("The parent {0} definition is".format(nodeParent.label))
-                        databaseLog.error("{0}".format(nodeParent.item.toAdjacencyList()))
-        except DatabaseError, e:
-            databaseLog.error(str(e))
-        
-        #eliminate duplicates and print into logger
-        notInTree=list(set(notInTree))
-        for groupName in notInTree:
-            databaseLog.error("The group '{0}' does not appear in tree'".format(groupName))
-        

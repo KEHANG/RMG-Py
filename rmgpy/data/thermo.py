@@ -233,7 +233,8 @@ class ThermoLibrary(Database):
         
         for entry in self.entries.values():
             if molecule.isIsomorphic(entry.item):
-                raise DatabaseError('Adjacency list of {0} matches that of existing molecule {1} in thermo library.  Please correct your library.'.format(label, entry.label))
+                if molecule.multiplicity == entry.item.multiplicity:
+                    raise DatabaseError('Adjacency list and multiplicity of {0} matches that of existing molecule {1} in thermo library.  Please correct your library.'.format(label, entry.label))
         
         self.entries[label] = Entry(
             index = index,
@@ -810,6 +811,8 @@ class ThermoDatabase(object):
         saturatedStruct.updateConnectivityValues()
         saturatedStruct.sortVertices()
         saturatedStruct.updateAtomTypes()
+        saturatedStruct.updateLonePairs()
+        saturatedStruct.multiplicity = 1
         
         # Get thermo estimate for saturated form of structure
         thermoData = stableThermoEstimator(saturatedStruct)

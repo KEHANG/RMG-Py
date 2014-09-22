@@ -49,6 +49,9 @@ import rmgpy.constants as constants
 import rmgpy.quantity as quantity
 from rmgpy.molecule import Molecule
 
+#: This dictionary is used to add multiplicity to species label
+_multiplicity_labels = {1:'S',2:'D',3:'T',4:'Q',5:'V',}
+                           
 ################################################################################
 
 class SpeciesError(Exception):
@@ -81,6 +84,7 @@ class Species(object):
     `Zrot`                  The rotational relaxation collision number
     `energyTransferModel`   The collisional energy transfer model to use
     `reactive`              ``True`` if the species participates in reactions, ``False`` if not
+    'props'                 A generic 'properties' dictionary to store user-defined flags
     ======================= ====================================================
 
     note::
@@ -91,7 +95,7 @@ class Species(object):
     def __init__(self, index=-1, label='', thermo=None, conformer=None, 
                  molecule=None, transportData=None, molecularWeight=None, 
                  dipoleMoment=None, polarizability=None, Zrot=None, 
-                 energyTransferModel=None, reactive=True):
+                 energyTransferModel=None, reactive=True, props={}):
         self.index = index
         self.label = label
         self.thermo = thermo
@@ -104,6 +108,16 @@ class Species(object):
         self.polarizability = polarizability
         self.Zrot = Zrot
         self.energyTransferModel = energyTransferModel
+        
+        # Check multiplicity of each molecule is the same
+        if molecule is not None and len(molecule)>1:
+            mult = molecule[0].multiplicity
+            for m in molecule[1:]:
+                if mult != m.multiplicity:
+                    raise SpeciesError('Multiplicities of molecules in species {species} do not match.'.format(species=label))
+
+        self.props = props
+
 
     def __repr__(self):
         """
@@ -189,10 +203,10 @@ class Species(object):
                 if molecule.isIsomorphic(other):
                     return True
         elif isinstance(other, Species):
-            for molecule1 in self.molecule:
-                for molecule2 in other.molecule:
-                    if molecule1.isIsomorphic(molecule2):
-                        return True
+                for molecule1 in self.molecule:
+                    for molecule2 in other.molecule:
+                        if molecule1.isIsomorphic(molecule2):
+                            return True
         else:
             raise ValueError('Unexpected value "{0!r}" for other parameter; should be a Molecule or Species object.'.format(other))
         return False

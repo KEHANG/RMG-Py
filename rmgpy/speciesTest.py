@@ -61,6 +61,7 @@ class TestSpecies(unittest.TestCase):
         species = cPickle.loads(cPickle.dumps(self.species,-1))
         self.assertEqual(self.species.index, species.index)
         self.assertEqual(self.species.label, species.label)
+        self.assertEqual(self.species.molecule[0].multiplicity, species.molecule[0].multiplicity)
         self.assertEqual(self.species.thermo.H298.value_si, species.thermo.H298.value_si)
         self.assertEqual(self.species.thermo.H298.units, species.thermo.H298.units)
         self.assertEqual(len(self.species.conformer.modes), len(species.conformer.modes))
@@ -86,6 +87,7 @@ class TestSpecies(unittest.TestCase):
         exec('species = {0!r}'.format(self.species))
         self.assertEqual(self.species.index, species.index)
         self.assertEqual(self.species.label, species.label)
+        self.assertEqual(self.species.molecule[0].multiplicity, species.molecule[0].multiplicity)
         self.assertEqual(self.species.thermo.H298.value_si, species.thermo.H298.value_si)
         self.assertEqual(self.species.thermo.H298.units, species.thermo.H298.units)
         self.assertEqual(len(self.species.conformer.modes), len(species.conformer.modes))
@@ -107,7 +109,14 @@ class TestSpecies(unittest.TestCase):
         """
         string = self.species.toAdjacencyList()
         self.assertTrue(string.startswith(self.species.molecule[0].toAdjacencyList(label=self.species.label,removeH=False)),string)
-
+    
+    def testSpeciesProps(self):
+        '''
+        Create a test in which a key-value pair is added to the props attribute of Species.
+        '''
+        self.species.props['foo'] = 'bar'
+        self.assertIsInstance(self.species.props, dict)
+        self.assertEquals(self.species.props['foo'], 'bar')
 ################################################################################
 
 if __name__ == '__main__':

@@ -3,8 +3,8 @@ database(
     thermoLibraries = ['primaryThermoLibrary'],
     reactionLibraries = [],
     seedMechanisms = [],
-    kineticsDepositories = ['training'], #  'all', 'default'==['training'], [], 
-    kineticsFamilies = ['!Intra_Disproportionation','!Substitution_O'],
+    kineticsDepositories = ['training'], 
+    kineticsFamilies = 'default',
     kineticsEstimator = 'rate rules',
 )
 
@@ -47,7 +47,7 @@ species(
 species(
     label='O2',
     reactive=True,
-    structure=SMILES("O=O"),
+    structure=SMILES("[O][O]"),
 )
 
 # Reaction systems

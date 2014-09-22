@@ -61,6 +61,9 @@ from rmgpy.reaction import Reaction
 from pdep import PDepReaction, PDepNetwork, PressureDependenceError
 # generateThermoDataFromQM under the Species class imports the qm package
 
+#: This dictionary is used to add multiplicity to species label
+_multiplicity_labels = {1:'S',2:'D',3:'T',4:'Q',5:'V',}
+
 
 ################################################################################
 
@@ -73,8 +76,8 @@ class Species(rmgpy.species.Species):
     def __init__(self, index=-1, label='', thermo=None, conformer=None, 
                  molecule=None, transportData=None, molecularWeight=None, 
                  dipoleMoment=None, polarizability=None, Zrot=None, 
-                 energyTransferModel=None, reactive=True, coreSizeAtCreation=0):
-        rmgpy.species.Species.__init__(self, index, label, thermo, conformer, molecule, transportData, molecularWeight, dipoleMoment, polarizability, Zrot, energyTransferModel, reactive)
+                 energyTransferModel=None, reactive=True, props={}, coreSizeAtCreation=0):
+        rmgpy.species.Species.__init__(self, index, label, thermo, conformer, molecule, transportData, molecularWeight, dipoleMoment, polarizability, Zrot, energyTransferModel, reactive, props)
         self.coreSizeAtCreation = coreSizeAtCreation
 
     def __reduce__(self):
@@ -126,7 +129,6 @@ class Species(rmgpy.species.Species):
                     thermo = []
                     for molecule in self.molecule:
                         molecule.clearLabeledAtoms()
-                        molecule.updateAtomTypes()
                         tdata = database.thermo.estimateRadicalThermoViaHBI(molecule, quantumMechanics.getThermoData)
                         if tdata is not None:
                             thermo.append(tdata)
@@ -151,7 +153,7 @@ class Species(rmgpy.species.Species):
                 if thermo0 is not None:
                     # Write the QM molecule thermo to a library so that can be used in future RMG jobs.
                     quantumMechanics.database.loadEntry(index = len(quantumMechanics.database.entries) + 1,
-                                                        label = molecule.toSMILES(),
+                                                        label = molecule.toSMILES() + '_({0})'.format(_multiplicity_labels[molecule.multiplicity]),
                                                         molecule = molecule.toAdjacencyList(),
                                                         thermo = thermo0,
                                                         shortDesc = thermo0.comment
@@ -217,7 +219,7 @@ class Species(rmgpy.species.Species):
             for T in Tlist:
                 err += (self.thermo.getHeatCapacity(T) - thermo0.getHeatCapacity(T))**2
             err = math.sqrt(err/len(Tlist))/constants.R
-            logging.log(logging.WARNING if err > 0.2 else 0, 'Average RMS error in heat capacity fit to {0} = {1:g}*R'.format(self, err))
+            # logging.log(logging.WARNING if err > 0.2 else 0, 'Average RMS error in heat capacity fit to {0} = {1:g}*R'.format(self, err))
 
         return self.thermo
 
@@ -404,7 +406,12 @@ class CoreEdgeReactionModel:
             # so that we can use the label in file paths
             label = molecule.toSMILES().replace('/','').replace('\\','')
         logging.debug('Creating new species {0}'.format(label))
-        spec = Species(index=self.speciesCounter+1, label=label, molecule=[molecule], reactive=reactive)
+        if reactive:
+            self.speciesCounter += 1   # count only reactive species
+            speciesIndex = self.speciesCounter
+        else:
+            speciesIndex = -1
+        spec = Species(index=speciesIndex, label=label, molecule=[molecule], reactive=reactive)
         spec.coreSizeAtCreation = len(self.core.species)
         spec.generateResonanceIsomers()
         spec.molecularWeight = Quantity(spec.molecule[0].getMolecularWeight()*1000.,"amu")
@@ -416,7 +423,6 @@ class CoreEdgeReactionModel:
         else:
             self.speciesDict[formula] = [spec]
 
-        self.speciesCounter += 1
 
         # Since the species is new, add it to the list of new species
         self.newSpeciesList.append(spec)

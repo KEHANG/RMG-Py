@@ -58,7 +58,7 @@ def saveEntry(f, entry):
     if isinstance(entry.item, Molecule):
         f.write('    molecule = \n')
         f.write('"""\n')
-        f.write(entry.item.toAdjacencyList(removeH=True))
+        f.write(entry.item.toAdjacencyList(removeH=False))
         f.write('""",\n')
     elif isinstance(entry.item, Group):
         f.write('    group = \n')
@@ -142,10 +142,13 @@ class TransportLibrary(Database):
                   shortDesc='',
                   longDesc='',
                   ):
+        
+        item = Molecule().fromAdjacencyList(molecule)
+        
         self.entries[label] = Entry(
             index = index,
             label = label,
-            item = Molecule().fromAdjacencyList(molecule),
+            item = item,
             data = transport,
             reference = reference,
             referenceType = referenceType,

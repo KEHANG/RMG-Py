@@ -8,11 +8,17 @@ database(
     kineticsEstimator = 'rate rules',
 )
 
+# Constraints on generated species
+generatedSpeciesConstraints(
+    allowed=['seed mechanisms'],
+    maximumRadicalElectrons = 2,
+)
+
 # List of species
 species(
     label='O2',     # oxygen
     reactive=True,
-    structure=SMILES("O=O"),
+    structure=SMILES("[O][O]"),
 )
 species(
     label='C8H18i', # isooctane

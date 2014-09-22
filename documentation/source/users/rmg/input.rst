@@ -7,7 +7,7 @@ Creating Input Files
 Syntax
 ======
 
-The format of RMG-Py input files is based on Python syntax. 
+The format of RMG-Py :file:`input.py` is based on Python syntax. 
 
 Each section is made up of one or more function calls, where parameters are 
 specified as text strings, numbers, or objects. Text strings must be wrapped in
@@ -15,6 +15,7 @@ either single or double quotes.
 
 Datasources
 ===========
+This section explains how to specify various reaction and thermo data sources in the input file.
 
 .. _thermolibraries:
 
@@ -36,17 +37,18 @@ Please see Section :ref:`editingthermodatabase` for details on editing the
 thermo library. In general, it is best to leave the ThermoLibrary
 set to its default value.  In particular, the thermodynamic properties for H and H2
 must be specified in one of the primary thermo libraries as they cannot be estimated
-by Benson's method
+by Benson's method.
 
-In addition to the default library, RMG comes with the thermodynamic properties
-of the species in the GRI-Mech 3.0 mechanism [GRIMech3.0]_.  
+For example, if you wish to use the GRI-Mech 3.0 mechanism [GRIMech3.0]_ as a ThermoLibrary in your model, the syntax will be::
 
+	thermoLibraries = ['primaryThermoLibrary','GRI-Mech3.0']
+  
 .. [GRIMech3.0] Gregory P. Smith, David M. Golden, Michael Frenklach, Nigel W. Moriarty, Boris Eiteneer, Mikhail Goldenberg, C. Thomas Bowman, Ronald K. Hanson, Soonho Song, William C. Gardiner, Jr., Vitali V. Lissianski, and Zhiwei Qin http://www.me.berkeley.edu/gri_mech/
 
 This library is located in the 
 :file:`$RMG/RMG-database/input/thermo/libraries` directory.  All "Locations" for the
 ThermoLibrary field must be with respect to the :file:`$RMG/RMG-database/input/thermo/libraries`
-directory.::
+directory.
 
 .. _reactionlibraries:
 
@@ -55,7 +57,7 @@ Reaction Libraries
 The next section of the :file:`input.py` file specifies which, if any,
 Reaction Libraries should be used. When a reaction library is specified, RMG will first
 use the reaction library to generate all the relevant reactions for the species 
-in the core before going through the reaction templates.Unlike the Seed Mechanism, 
+in the core before going through the reaction templates. Unlike the Seed Mechanism, 
 reactions present in a Reaction Library will not be included in the core automatically 
 from the start.  
 
@@ -64,18 +66,13 @@ In the following example, the user has created
 a reaction library with a few additional reactions specific to n-butane, and these reactions 
 are to be used in addition to the Glarborg C3 library::
 
-	ReactionLibrary:
-	Name: nbutane 
-	Location: nbutane 
-	Name: Glarborg 
-	Location: Glarborg/C3
-	END 	
+	reactionLibraries = [('Glarborg/C3',False)],
+	 	
 
-The reaction libraries are stored in :file:`RMG-database/input/kinetics/libraries/`
+The reaction libraries are stored in :file:`$RMG-database/input/kinetics/libraries/`
 and the `Location:` should be specified relative to this path.
 
-Please note that the keyword ``END`` must be placed at the end of the Reaction Library
-section. Because the units for the Arrhenius parameters are
+Because the units for the Arrhenius parameters are
 given in each mechanism, the different mechanisms can have different units.
 
 .. note::
@@ -94,10 +91,10 @@ given in each mechanism, the different mechanisms can have different units.
 
 Seed Mechanisms
 --------------
-The next section of the :file:`condition.txt` file specifies which, if any, 
+The next section of the :file:`input.py` file specifies which, if any, 
 Seed Mechanisms should be used.  If a seed mechanism is passed to RMG, every
-species and reaction present in the mechanism will be placed into the core, in
-addition to the species that are listed in the :ref:`reactants` section.
+species and reaction present in the seed mechanism will be placed into the core, in
+addition to the species that are listed in the :ref:`List of species` section.
 
 For details of the kinetics libraries included with RMG that can be used as a seed mechanism,
 see :ref:`reactionlibraries`.
@@ -105,28 +102,12 @@ see :ref:`reactionlibraries`.
 You can specify your own
 seed mechanism in the location section. Please note that the oxidation
 library should not be used for pyrolysis models. The syntax for the seed mechanisms
-is similar to that of the primary reaction libraries, except for the ``GenerateReactions`` 
-line, explained below.::
+is similar to that of the primary reaction libraries. ::
 
-	SeedMechanism:
-	Name: GRI-Mech 3.0
-	Location: GRI-Mech3.0
-	GenerateReactions: yes
-	Name: Leeds 
-	Location: combustion_core/version5 
-	GenerateReactions: yes
-	END 
+	seedMechanisms = ['GRI-Mech3.0'] 
 
-The seed mechanisms are stored in :file:`$RMG/databases/RMG_database/kinetics_libraries/`
-and the `Location:` should be specified relative to this path.
+The seed mechanisms are stored in :file:`RMG-database/input/kinetics/libraries/`
 
-There is a new required ``GenerateReactions`` line in seed mechanisms that controls how RMG adds the
-seed species and reactions to the model core. If set to ``yes``, RMG will use its
-reaction families to react all seed species with one another; the generated
-reactions will supplement the seed reactions. If set to ``no``, RMG will not
-generate reactions of the seed species. In either case, RMG will react the
-species in the condition file with one another and with all species in the
-seed mechanism.
 
 As the units for the Arrhenius parameters are given in each mechanism, 
 different mechanisms can have different units. Additionally, if the same 
@@ -134,34 +115,53 @@ reaction occurs more than once in the combined mechanism,
 the instance of it from the first mechanism in which it appears is
 the one that gets used.
 
+.. _kineticsdepositories:
+
 Kinetics Depositories
---------------------
+---------------------
+:: 
+
+	kineticsDepositories = ['training']
+	
+	
+.. _kineticsfamilies:
 
 Kinetics Families
 ----------------
+In this section users can specify the particular reaction families that they wish to use to generate their model. for example you can use only :file:`Intra_RH_Add_Endocyclic` family to build the model by:: 
 
+	kineticsFamilies = ['Intra_RH_Add_Endocyclic']
+	
+Otherwise, by typing 'default', RMG will use recommended reaction families to generate the mechanism. The recommended reaction families can be found in :file:`RMG-database/input/families/recommended.py`.
+
+	
 Kinetics Estimator
 -----------------
+The last section is specifying that RMG is estimating kinetics of reactions from rate rules. For more details on how kinetic estimations is working check :ref:`Kinetics Estimation <kinetics>`:: 
 
+	kineticsEstimator = 'rate rules'
+	
 
 The following is an example of a database block, based on above chosen libraries and options::
 
 	database(
 		thermoLibraries = ['primaryThermoLibrary', 'GRI-Mech3.0'],
-		reactionLibraries = [],
-		seedMechanisms = [],
-		kineticsDepositories = ['training'], #  'all', 'default'==['training'], [], 
-		kineticsFamilies = ['!Intra_Disproportionation'],
+		reactionLibraries = [('Glarborg/C3',False)],
+		seedMechanisms = ['GRI-Mech3.0'],
+		kineticsDepositories = ['training'],  
+		kineticsFamilies = 'defult',
 		kineticsEstimator = 'rate rules',
 	)
 
-Species
-=======
+.. _species:
+
+List of species
+===============
 
 Species to be included in the core at the start of your RMG job are defined in the species block. 
 The label, reactive or inert, and structure of each reactant must be specified.
 The label field will be used throughout your mechanism to identify the species. Inert
-species in the model cab be defined by setting reactive to be ``False``, for all
+species in the model can be defined by setting reactive to be ``False``, for all
 other species the reactive status must be set as ``True``. The structure of the 
 species can be defined using either by using SMILES or :ref:`adjacencyList <rmgpy.molecule.adjlist>`.  
 
@@ -181,6 +181,9 @@ The following is an example of a typical species item, based on methane using SM
 			1 C 0
 			"""
 	)
+
+.. _reactionsystem:
+
 
 Reaction System
 ===============
@@ -209,6 +212,43 @@ The following is an example of a simple reactor system::
 		},
 		terminationTime=(1e0,'s'),
 	)
+
+
+.. _simulatortolerances:
+
+Simulator Tolerances
+====================
+The next two lines specify the absolute and relative tolerance for the ODE solver, respectively. Common values for the absolute tolerance are 1e-15 to 1e-25. Relative tolerance is usually 1e-4 to 1e-8::
+	
+	simulator(
+	    atol=1e-16,
+	    rtol=1e-8,
+	)
+
+
+.. _pruning:
+
+Pruning
+=======
+When using automated time stepping, it is also possible to perform mechanism generation with pruning of “unimportant” edge species to reduce memory usage. 
+The example below shows how to set up pruning parameters::
+	
+	model(
+	    toleranceKeepInEdge=0.0,
+	    toleranceMoveToCore=0.5,
+	    toleranceInterruptSimulation=0.5,
+	    maximumEdgeSpecies=100000
+	)
+
+:ref:`toleranceKeepInEdge` indicates how low the edge flux ratio for a species must get before the species is pruned (removed) from the edge.
+:ref:`toleranceInterruptSimulation` indicates how high the edge flux ratio must get to interrupt the simulation (before reaching the :ref:`terminationConversion` or 
+:ref:`terminationTime`). Pruning won’t occur if the simulation is interrupted before reaching the goal criteria, so set this high to increase pruning opportunities. 
+:ref:`maximumEdgeSpecies` indicates the upper limit for the size of the edge.
+
+When using pruning, RMG will not prune unless all reaction systems reach the goal reaction time or conversion without first exceeding the termination tolerance. Therefore, you may find that RMG is not pruning even though the model edge size exceeds :ref:`maximumEdgeSpecies`. In order to increase the likelihood of pruning in such cases, you can try increasing :ref:`toleranceInterruptSimulation` to an arbitrarily high value. Alternatively, if you are using a conversion goal, because reaction systems may reach equilibrium below the goal conversion, it may be helpful to reduce the goal conversion or switch to a goal reaction time.
+
+
+.. _ontheflyquantumcalculations:
 
 On the fly Quantum Calculations
 ===============================
@@ -243,17 +283,21 @@ The following is an example of the quantum mechanics options ::
 
 .. [RDKit] RDKit: Open-source cheminformatics; http://www.rdkit.org
 
+
+.. _pressuredependence:
+
 Pressure Dependence
 ===================
 
 This block is used when the model should account for pressure 
-dependent rate coefficients. RMG can estimate pressure dependence kinetics based on : ``Modified Strong Collision`` and ``Reservoir State``. 
+dependent rate coefficients. RMG can estimate pressure dependence kinetics based on ``Modified Strong Collision`` and ``Reservoir State`` methods. 
 The former utilizes the modified strong collision approach of Chang, Bozzelli, and Dean [Chang2000]_, 
 and works reasonably well while running more rapidly. The latter 
 utilizes the steady-state/reservoir-state approach of Green and Bhatti [Green2007]_, 
 and is more theoretically sound but more expensive.
 
 The pressure dependence block should specify the following ::
+
 
 Method used for estimating pressure dependent kinetics
 ------------------------------------------------------
