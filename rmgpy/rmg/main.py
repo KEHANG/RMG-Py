@@ -386,9 +386,9 @@ class RMG:
 
         from pympler.classtracker_stats import HtmlStats
 
-        tracker = ClassTracker()
-        tracker.track_class(Species)
-        tracker.create_snapshot()
+        #tracker = ClassTracker()
+        #tracker.track_class(Species)
+        #tracker.create_snapshot()
 
     
         self.initialize(args)
@@ -470,10 +470,10 @@ class RMG:
                 # species from the edge
                 if allTerminated:
                     pruneCounter = pruneCounter + 1
-                    tracker.create_snapshot('before pruning')
+                    # tracker.create_snapshot('before pruning')
 
                     self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
-                    tracker.create_snapshot('after pruning')
+                    # tracker.create_snapshot('after pruning')
                     if (pruneCounter % 2) == 1:
                         try:
                             import psutil
@@ -484,7 +484,7 @@ class RMG:
                             logging.info('    Memory used before GC: Unkonwn MB')
                         collected = gc.collect()
                         logging.info('Garbage collector: collected %d objects.' % (collected))
-                        tracker.create_snapshot('after gc')
+                        # tracker.create_snapshot('after gc')
                         try:
                             import psutil
                             process = psutil.Process(os.getpid())
@@ -499,7 +499,7 @@ class RMG:
                 logging.info('')
                 objectsToEnlarge = list(set(objectsToEnlarge))
                 self.reactionModel.enlarge(objectsToEnlarge)
-                tracker.create_snapshot('after enlargement')
+                # tracker.create_snapshot('after enlargement')
 
 
             # self.saveEverything()
@@ -596,7 +596,7 @@ class RMG:
         logging.info('The final model core has %s species and %s reactions' % (coreSpec, coreReac))
         logging.info('The final model edge has %s species and %s reactions' % (edgeSpec, edgeReac))
 
-        HtmlStats(tracker=tracker).create_html('RMG-MemoryProfile.html')
+        # HtmlStats(tracker=tracker).create_html('RMG-MemoryProfile.html')
         
         self.finish()
         

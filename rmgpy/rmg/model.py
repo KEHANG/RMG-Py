@@ -37,6 +37,7 @@ import math
 import numpy
 import os.path
 import itertools
+import objgraph
 
 from rmgpy.display import display
 #import rmgpy.chemkin
@@ -1104,10 +1105,21 @@ class CoreEdgeReactionModel:
         # Actually do the pruning
         if pruneDueToRateCounter > 0:
             logging.info('Pruning {0:d} species whose rate ratios against characteristic rate did not exceed the minimum threshold of {1:g}'.format(pruneDueToRateCounter, toleranceKeepInEdge))
+
+            # Use objgraph to detect backrefs of pruned species before pruning
+            prunedSpeciesForObjGraph = speciesToPrune[0][1]
+            objgraph.show_backrefs([prunedSpeciesForObjGraph], filename='In Function prune() prunedSpecies-'+ str(speciesToPrune[0][0]) + '-ObjGraph-BefPruned.jpg')
+
+            # start to prune
             for index, spec in speciesToPrune[0:pruneDueToRateCounter]:
                 logging.info('Pruning species {0:<56}'.format(spec))
                 logging.debug('    {0:<56}    {1:10.4e}'.format(spec, maxEdgeSpeciesRateRatios[index]))
                 self.removeSpeciesFromEdge(spec)
+
+            # Use objgraph to detect backrefs of pruned species after pruning
+            prunedSpeciesForObjGraph = speciesToPrune[0][1]
+            objgraph.show_backrefs([prunedSpeciesForObjGraph], filename='In Function prune() prunedSpecies-'+ str(speciesToPrune[0][0]) + '-ObjGraph-AftfPruned.jpg')
+
         if len(speciesToPrune) - pruneDueToRateCounter > 0:
             logging.info('Pruning {0:d} species to obtain an edge size of {1:d} species'.format(len(speciesToPrune) - pruneDueToRateCounter, maximumEdgeSpecies))
             for index, spec in speciesToPrune[pruneDueToRateCounter:]:
