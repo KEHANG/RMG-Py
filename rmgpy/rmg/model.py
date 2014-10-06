@@ -1107,9 +1107,11 @@ class CoreEdgeReactionModel:
             logging.info('Pruning {0:d} species whose rate ratios against characteristic rate did not exceed the minimum threshold of {1:g}'.format(pruneDueToRateCounter, toleranceKeepInEdge))
 
             # Use objgraph to detect backrefs of pruned species before pruning
-            prunedSpeciesForObjGraph = speciesToPrune[0][1]
-            objgraph.show_backrefs([prunedSpeciesForObjGraph], filename='In Function prune() prunedSpecies-'+ str(speciesToPrune[0][0]) + '-ObjGraph-BefPruned.jpg')
+            # prunedSpeciesForObjGraph = speciesToPrune[0][1]
+            # objgraph.show_refs([prunedSpeciesForObjGraph], max_depth=8, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-BefPruned.jpg')
 
+            # coreEdgeModelInstance = [self.core, self.edge]
+            # objgraph.show_refs(coreEdgeModelInstance, max_depth=5, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-BefPruned-coreAndEdge.jpg')
             # start to prune
             for index, spec in speciesToPrune[0:pruneDueToRateCounter]:
                 logging.info('Pruning species {0:<56}'.format(spec))
@@ -1117,8 +1119,11 @@ class CoreEdgeReactionModel:
                 self.removeSpeciesFromEdge(spec)
 
             # Use objgraph to detect backrefs of pruned species after pruning
-            prunedSpeciesForObjGraph = speciesToPrune[0][1]
-            objgraph.show_backrefs([prunedSpeciesForObjGraph], filename='In Function prune() prunedSpecies-'+ str(speciesToPrune[0][0]) + '-ObjGraph-AftfPruned.jpg')
+            # objgraph.show_refs([prunedSpeciesForObjGraph], max_depth=8, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-AftfPruned.jpg')
+
+            # objgraph.show_refs(coreEdgeModelInstance, max_depth=5, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-AftPruned-coreAndEdge.jpg')
+
+
 
         if len(speciesToPrune) - pruneDueToRateCounter > 0:
             logging.info('Pruning {0:d} species to obtain an edge size of {1:d} species'.format(len(speciesToPrune) - pruneDueToRateCounter, maximumEdgeSpecies))
@@ -1191,6 +1196,14 @@ class CoreEdgeReactionModel:
             for reactant1 in self.reactionDict[family]:
                 if spec in self.reactionDict[family][reactant1]:
                     del self.reactionDict[family][reactant1][spec]
+            for reactant1 in self.reactionDict[family]:
+                for reactant2 in self.reactionDict[family][reactant1]:
+                    tempRxnDeleteList = []
+                    for templateReaction in self.reactionDict[family][reactant1][reactant2]:
+                        if spec in templateReaction.reactants or spec in templateReaction.products:
+                            tempRxnDeleteList.append(templateReaction)
+                    for tempRxnToBeDeleted in tempRxnDeleteList:
+                        self.reactionDict[family][reactant1][reactant2].remove(tempRxnToBeDeleted)
 
         # remove from the global list of species, to free memory
         formula = spec.molecule[0].getFormula()
