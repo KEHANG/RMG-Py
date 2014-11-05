@@ -382,15 +382,13 @@ class RMG:
         Execute an RMG job using the command-line arguments `args` as returned
         by the :mod:`argparse` package.
         """
-        from pympler.classtracker import ClassTracker
+        # from pympler.classtracker import ClassTracker
+        #
+        # from pympler.classtracker_stats import HtmlStats
 
-        from pympler.classtracker_stats import HtmlStats
-
-        tracker = ClassTracker()
-        tracker.track_class(Species)
-        tracker.create_snapshot()
-
-    
+        # tracker = ClassTracker()
+        # tracker.track_class(Species)
+        # tracker.create_snapshot()
         self.initialize(args)
         
         # RMG execution statistics
@@ -405,6 +403,8 @@ class RMG:
         memoryUseAfterPruning = []
         memoryUseAfterGC = []
         memoryUseAfterEnlarge = []
+
+        prunedSpeciesNumList = []
 
         self.done = False
         self.saveEverything()
@@ -484,11 +484,11 @@ class RMG:
                 if allTerminated:
                     pruneCounter = pruneCounter + 1
 
-                    tracker.create_snapshot('before pruning')
+                    # tracker.create_snapshot('before pruning')
+                    prunedSpeciesNum = self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
+                    prunedSpeciesNumList.append(prunedSpeciesNum)
 
-                    self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
-
-                    tracker.create_snapshot('after pruning')
+                    # tracker.create_snapshot('after pruning')
                     # Check memory usage after pruning
                     try:
                         import psutil
@@ -500,11 +500,11 @@ class RMG:
                         memoryUseAfterPruning.append(0.0)
 
                     # Manual garbage collection
-                    if (pruneCounter % 2) == 1:
+                    if (pruneCounter % 1) == 0:
                         # manual gc
                         collected = gc.collect()
                         logging.info('Garbage collector: collected %d objects.' % (collected))
-                        tracker.create_snapshot('after gc')
+                        # tracker.create_snapshot('after gc')
 
                         # get memory usage after gc
                         try:
@@ -520,13 +520,14 @@ class RMG:
                 logging.info('')
                 objectsToEnlarge = list(set(objectsToEnlarge))
                 self.reactionModel.enlarge(objectsToEnlarge)
-                tracker.create_snapshot('after enlargement')
+                # tracker.create_snapshot('after enlargement')
 
             # self.saveEverything()
 
             # to make all the memory use list are in same length
-            if self.done or not allTerminated or (pruneCounter % 2) == 0:
+            if self.done or not allTerminated or (pruneCounter % 1) == 1:
                 if self.done or not allTerminated:
+                    prunedSpeciesNumList.append(0)
                     memoryUseAfterPruning.append(0.0)
                 memoryUseAfterGC.append(0.0)
 
@@ -558,7 +559,7 @@ class RMG:
                 logging.info('    Restart file size: %.2f MB' % (restartSize[-1]))
             else:
                 restartSize.append(0.0)
-            self.saveExecutionStatistics(execTime, coreSpeciesCount, coreReactionCount, edgeSpeciesCount, edgeReactionCount, memoryUseAfterDynSimu, memoryUseAfterPruning, memoryUseAfterGC, memoryUseAfterEnlarge, restartSize)
+            self.saveExecutionStatistics(execTime, coreSpeciesCount, coreReactionCount, edgeSpeciesCount, edgeReactionCount, prunedSpeciesNumList, memoryUseAfterDynSimu, memoryUseAfterPruning, memoryUseAfterGC, memoryUseAfterEnlarge, restartSize)
             if self.generatePlots:
                 self.generateExecutionPlots(execTime, coreSpeciesCount, coreReactionCount, edgeSpeciesCount, edgeReactionCount, memoryUseAfterEnlarge, restartSize)
     
@@ -613,7 +614,19 @@ class RMG:
                     sensitivity = reactionSystem.sensitivity,
                     sensWorksheet = sensWorksheet,
                 )                                 
-    
+
+        # if iterationCounter == iterationMax:
+        #     import objgraph
+        #     print(objgraph.count('Species'))
+        #     self.clear()
+        #     print(objgraph.count('Species'))
+        #     gc.collect()
+        #     print(objgraph.count('Species'))
+        #     import psutil
+        #     process = psutil.Process(os.getpid())
+        #     rss, vms = process.get_memory_info()
+        #     logging.info('After deleting CoreEdge Memory used: %.2f MB' % (rss / 1.0e6))
+
         # Write output file
         logging.info('')
         logging.info('MODEL GENERATION COMPLETED')
@@ -622,7 +635,7 @@ class RMG:
         logging.info('The final model core has %s species and %s reactions' % (coreSpec, coreReac))
         logging.info('The final model edge has %s species and %s reactions' % (edgeSpec, edgeReac))
 
-        HtmlStats(tracker=tracker).create_html('RMG-MemoryProfile.html')
+        # HtmlStats(tracker=tracker).create_html('RMG-MemoryProfile.html')
         
         self.finish()
         
@@ -843,7 +856,7 @@ class RMG:
         f.close()
     
     def saveExecutionStatistics(self, execTime, coreSpeciesCount, coreReactionCount,
-        edgeSpeciesCount, edgeReactionCount, memoryUseAfterDynSimu, memoryUseAfterPruning, memoryUseAfterGC, memoryUseAfterEnlarge, restartSize):
+        edgeSpeciesCount, edgeReactionCount, prunedSpeceisNumList, memoryUseAfterDynSimu, memoryUseAfterPruning, memoryUseAfterGC, memoryUseAfterEnlarge, restartSize):
         """
         Save the statistics of the RMG job to an Excel spreadsheet for easy viewing
         after the run is complete. The statistics are saved to the file
@@ -887,31 +900,36 @@ class RMG:
         sheet.write(0,4,'Edge reactions')
         for i, count in enumerate(edgeReactionCount):
             sheet.write(i+1,4,count)
-    
-        # Sixth column is memory used
-        sheet.write(0,5,'Memory used after dynamic simulation(MB)')
-        for i, memory in enumerate(memoryUseAfterDynSimu):
-            sheet.write(i+1,5,memory)
 
+        # Sixth column is number of pruned species
+        sheet.write(0,5,'Pruned Species Number')
+        for i, count in enumerate(prunedSpeceisNumList):
+            sheet.write(i+1,5,count)
+    
         # Seventh column is memory used
-        sheet.write(0,6,'Memory used after Pruning (MB)')
-        for i, memory in enumerate(memoryUseAfterPruning):
+        sheet.write(0,6,'Memory used after dynamic simulation(MB)')
+        for i, memory in enumerate(memoryUseAfterDynSimu):
             sheet.write(i+1,6,memory)
 
         # Eighth column is memory used
-        sheet.write(0,7,'Memory used after GC (MB)')
-        for i, memory in enumerate(memoryUseAfterGC):
+        sheet.write(0,7,'Memory used after Pruning (MB)')
+        for i, memory in enumerate(memoryUseAfterPruning):
             sheet.write(i+1,7,memory)
 
         # Ninth column is memory used
-        sheet.write(0,8,'Memory used after Enlarge (MB)')
-        for i, memory in enumerate(memoryUseAfterEnlarge):
+        sheet.write(0,8,'Memory used after GC (MB)')
+        for i, memory in enumerate(memoryUseAfterGC):
             sheet.write(i+1,8,memory)
-    
+
         # Tenth column is restart file size
-        sheet.write(0,9,'Restart file size (MB)')
-        for i, memory in enumerate(restartSize):
+        sheet.write(0,9,'Memory used after Enlarge (MB)')
+        for i, memory in enumerate(memoryUseAfterEnlarge):
             sheet.write(i+1,9,memory)
+    
+        # Eleventh column is restart file size
+        sheet.write(0,10,'Restart file size (MB)')
+        for i, memory in enumerate(restartSize):
+            sheet.write(i+1,10,memory)
     
         # Save workbook to file
         fstr = os.path.join(self.outputDirectory, 'statistics.xls')

@@ -1099,7 +1099,7 @@ class CoreEdgeReactionModel:
                 logging.info('Pruning species {0} to make numEdgeSpecies smaller than maximumEdgeSpecies'.format(self.edge.species[index]))
                 speciesToPrune.append((index, self.edge.species[index]))
             else:
-                break
+                continue
         logging.info('Having {0} species to prune'.format(len(speciesToPrune)))
         # Actually do the pruning
         if pruneDueToRateCounter > 0:
@@ -1107,18 +1107,23 @@ class CoreEdgeReactionModel:
 
             # Use objgraph to detect backrefs of pruned species before pruning
             # prunedSpeciesForObjGraph = speciesToPrune[0][1]
-            # objgraph.show_refs([prunedSpeciesForObjGraph], max_depth=8, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-BefPruned.jpg')
+            # objgraph.show_backrefs([prunedSpeciesForObjGraph], max_depth=8, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-BefPruned.jpg')
 
             # coreEdgeModelInstance = [self.core, self.edge]
             # objgraph.show_refs(coreEdgeModelInstance, max_depth=5, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-BefPruned-coreAndEdge.jpg')
+
             # start to prune
             for index, spec in speciesToPrune[0:pruneDueToRateCounter]:
                 logging.info('Pruning species {0:<56}'.format(spec))
                 logging.debug('    {0:<56}    {1:10.4e}'.format(spec, maxEdgeSpeciesRateRatios[index]))
                 self.removeSpeciesFromEdge(spec)
 
+            # Clean up newLists, mainly to help check references are eliminated, not necessarily needed in real runs
+            # self.newSpeciesList = []
+            # self.newReactionList = []
+
             # Use objgraph to detect backrefs of pruned species after pruning
-            # objgraph.show_refs([prunedSpeciesForObjGraph], max_depth=8, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-AftfPruned.jpg')
+            # objgraph.show_backrefs([prunedSpeciesForObjGraph], max_depth=8, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-AftfPruned.jpg')
 
             # objgraph.show_refs(coreEdgeModelInstance, max_depth=5, filename='In Function prune() prunedSpecies-'+ str(prunedSpeciesForObjGraph.index) + '-ObjGraph-AftPruned-coreAndEdge.jpg')
 
@@ -1148,6 +1153,7 @@ class CoreEdgeReactionModel:
                     self.networkList.remove(network)
 
         logging.info('')
+        return len(speciesToPrune)
 
     def removeSpeciesFromEdge(self, spec):
         """
