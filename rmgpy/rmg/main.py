@@ -634,7 +634,7 @@ class RMG:
         coreSpec, coreReac, edgeSpec, edgeReac = self.reactionModel.getModelSize()
         logging.info('The final model core has %s species and %s reactions' % (coreSpec, coreReac))
         logging.info('The final model edge has %s species and %s reactions' % (edgeSpec, edgeReac))
-
+        self.saveChemkinFiles()
         # HtmlStats(tracker=tracker).create_html('RMG-MemoryProfile.html')
         
         self.finish()
