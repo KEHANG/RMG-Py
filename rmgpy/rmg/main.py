@@ -150,6 +150,9 @@ class RMG:
         self.absoluteTolerance = 1.0e-8
         self.relativeTolerance = 1.0e-4
         self.maximumEdgeSpecies = 1000000
+        self.maxPruneRate = 1.0
+        self.noInitPruning = 50
+        self.minExistIter = 2
         self.termination = []
         
         self.done = False
@@ -390,7 +393,7 @@ class RMG:
         # tracker.track_class(Species)
         # tracker.create_snapshot()
         self.initialize(args)
-        
+
         # RMG execution statistics
         coreSpeciesCount = []
         coreReactionCount = []
@@ -426,7 +429,7 @@ class RMG:
                 
                 # Conduct simulation
                 logging.info('Conducting simulation of reaction system %s...' % (index+1))
-                if coreSpec <= 50: # To make model more complete, initially no pruning is allowed
+                if coreSpec <= self.noInitPruning: # To make model more complete, initially no pruning is allowed
                     terminated, obj = reactionSystem.simulate(
                     coreSpecies = self.reactionModel.core.species,
                     coreReactions = self.reactionModel.core.reactions,
@@ -485,7 +488,7 @@ class RMG:
                     pruneCounter = pruneCounter + 1
 
                     # tracker.create_snapshot('before pruning')
-                    prunedSpeciesNum = self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies)
+                    prunedSpeciesNum = self.reactionModel.prune(self.reactionSystems, self.fluxToleranceKeepInEdge, self.maximumEdgeSpecies, self.maxPruneRate, self.minExistIter)
                     prunedSpeciesNumList.append(prunedSpeciesNum)
 
                     # tracker.create_snapshot('after pruning')
