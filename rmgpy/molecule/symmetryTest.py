@@ -75,12 +75,15 @@ class TestMoleculeSymmetry(unittest.TestCase):
         Test the Molecule.calculateBondSymmetryNumber() method.
         """
         molecule = Molecule().fromSMILES('CC')
-        symmetryNumber = 1
+        origSymmetryNumber = 1
+        newSymmetryNumber = 1
         for atom1 in molecule.atoms:
             for atom2 in atom1.bonds:
                 if molecule.atoms.index(atom1) < molecule.atoms.index(atom2):
-                    symmetryNumber *= calculateBondSymmetryNumber(molecule, atom1, atom2)
-        self.assertEqual(symmetryNumber, 2)
+                    origSymmetryNumber *= calculateBondSymmetryNumber(molecule, atom1, atom2)
+                    newSymmetryNumber *= calculateBondSymmetryNumber_parallel(molecule, atom1, atom2)
+        self.assertEqual(origSymmetryNumber, 2)
+        self.assertEqual(newSymmetryNumber, 2)
         
     def testBondSymmetryNumberPropane(self):
         """
