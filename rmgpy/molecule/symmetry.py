@@ -242,7 +242,7 @@ def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
                     groups2OrderList = list(permutations(range(len(groups2))))
                     groupsIsomorphism = False
                     idx = 0
-                    while not groupsIsomorphism:
+                    while (not groupsIsomorphism) and (idx < len(groups2OrderList)):
                         groupsIsomorphism = groups_isomorphism(groups1, groups2, groups2OrderList[idx])
                         if groupsIsomorphism:
                             symmetryNumber *= 2
