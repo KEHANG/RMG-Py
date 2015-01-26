@@ -30,6 +30,7 @@ import rmgpy.molecule
 from scoop import futures
 import operator
 from itertools import permutations
+import time
 """
 This module provides functionality for estimating the symmetry number of a
 molecule from its chemical graph representation.
@@ -208,6 +209,7 @@ def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
     """
     bond = atom1.edges[atom2]
     symmetryNumber = 1
+    t_futures = 0
     if bond.isSingle() or bond.isDouble() or bond.isTriple():
         if atom1.equivalent(atom2):
             # An O-O bond is considered to be an "optical isomer" and so no
@@ -238,18 +240,22 @@ def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
                 groups2 = fragment2.split()
 
                 # Test functional groups for symmetry
+
                 if len(groups1) == len(groups2):
                     groups2OrderList = list(permutations(range(len(groups2))))
                     groupsIsomorphism = False
                     idx = 0
                     while (not groupsIsomorphism) and (idx < len(groups2OrderList)):
+                        n1 = time.time()
                         groupsIsomorphism = groups_isomorphism(groups1, groups2, groups2OrderList[idx])
+                        n2 = time.time()
+                        t_futures += (n2-n1)*10**3
                         if groupsIsomorphism:
                             symmetryNumber *= 2
                         else:
                             idx += 1
 
-    return symmetryNumber
+    return (symmetryNumber, t_futures)
 
 def groups_isomorphism(groups1, groups2, groups2Order):
     if len(groups1) != len(groups2):
