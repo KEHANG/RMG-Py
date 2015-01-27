@@ -258,16 +258,13 @@ def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
     return (symmetryNumber, t_futures)
 
 def groups_isomorphism(groups1, groups2, groups2Order):
-    if len(groups1) != len(groups2):
+    tasks = [futures.submit(checkIsomorphism, groups1[i], groups2[order]) for i, order in enumerate(groups2Order)]
+    isIsomorphismList = [task.result() for task in tasks]
+    print 'isIsomorphismList: ', isIsomorphismList
+    if False in isIsomorphismList:
         return False
     else:
-        tasks = [futures.submit(checkIsomorphism, groups1[i], groups2[order]) for i, order in enumerate(groups2Order)]
-        isIsomorphismList = [task.result() for task in tasks]
-        print 'isIsomorphismList: ', isIsomorphismList
-        if False in isIsomorphismList:
-            return False
-        else:
-            return True
+        return True
 
 ################################################################################
 
