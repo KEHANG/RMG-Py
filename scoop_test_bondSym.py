@@ -32,7 +32,7 @@ def main():
     logger.info( 'Parallel Time: {0:.4f} milliseconds'.format(t_parallel))
     logger.info( 'Scoop Futures Time: {0:.4f} milliseconds'.format(t_fragment))
     logger.info( 'Non_Parallel Time: {0:.4f} milliseconds'.format(t_non_parallel))
-    elapsedTime = {'t_parallel': t_parallel, 't_futures': t_fragment, 't_non_parallel': t_non_parallel}
+    elapsedTime = {'t_parallel': t_parallel, 't_fragment': t_fragment, 't_non_parallel': t_non_parallel}
     with open('times.json', 'a') as timeFile:
         json.dump(elapsedTime, timeFile)
         timeFile.write('\n')

@@ -242,7 +242,7 @@ def calculateBondSymmetryNumber_fragment(molecule, atom1, atom2):
                 # Test functional groups for symmetry
                 n1 = time.time()
                 if len(groups1) == len(groups2):
-                    if fragment1.isIsomorphism(fragment2):
+                    if fragment1.isIsomorphic(fragment2):
                         symmetryNumber *= 2
                 n2 = time.time()
                 t_fragment += (n2-n1)*10**3
