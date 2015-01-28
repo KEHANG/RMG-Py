@@ -203,6 +203,52 @@ def calculateBondSymmetryNumber(molecule, atom1, atom2):
                 
     return symmetryNumber
 
+def calculateBondSymmetryNumber_fragment(molecule, atom1, atom2):
+    """
+    Return the symmetry number centered at `bond` in the structure.
+    """
+    bond = atom1.edges[atom2]
+    symmetryNumber = 1
+    t_fragment = 0
+    if bond.isSingle() or bond.isDouble() or bond.isTriple():
+        if atom1.equivalent(atom2):
+            # An O-O bond is considered to be an "optical isomer" and so no
+            # symmetry correction will be applied
+            if atom1.atomType.label == 'Os' and atom2.atomType.label == 'Os' and atom1.radicalElectrons == atom2.radicalElectrons == 0:
+                return symmetryNumber
+            # If the molecule is diatomic, then we don't have to check the
+            # ligands on the two atoms in this bond (since we know there
+            # aren't any)
+            elif len(molecule.vertices) == 2:
+                symmetryNumber = 2
+            else:
+                molecule.removeBond(bond)
+                structure = molecule.copy(True)
+                molecule.addBond(bond)
+
+                atom1 = structure.atoms[molecule.atoms.index(atom1)]
+                atom2 = structure.atoms[molecule.atoms.index(atom2)]
+                fragments = structure.split()
+                if len(fragments) != 2: return symmetryNumber
+
+                fragment1, fragment2 = fragments
+                if atom1 in fragment1.atoms: fragment1.removeAtom(atom1)
+                if atom2 in fragment1.atoms: fragment1.removeAtom(atom2)
+                if atom1 in fragment2.atoms: fragment2.removeAtom(atom1)
+                if atom2 in fragment2.atoms: fragment2.removeAtom(atom2)
+                groups1 = fragment1.split()
+                groups2 = fragment2.split()
+
+                # Test functional groups for symmetry
+                n1 = time.time()
+                if len(groups1) == len(groups2):
+                    if fragment1.isIsomorphism(fragment2):
+                        symmetryNumber *= 2
+                n2 = time.time()
+                t_fragment += (n2-n1)*10**3
+
+    return (symmetryNumber, t_fragment)
+
 def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
     """
     Return the symmetry number centered at `bond` in the structure.
@@ -266,7 +312,7 @@ def groups_isomorphism(groups1, groups2, groups2Order):
     isIsomorphismList = []
     for i, order in enumerate(groups2Order):
         isIsomorphismList.append(checkIsomorphism(groups1[i], groups2[order]))
-        
+
     print 'isIsomorphismList: ', isIsomorphismList
     if False in isIsomorphismList:
         return False

@@ -1,12 +1,14 @@
 from scoop import futures, logger
 from rmgpy.molecule.symmetryTest import *
 import time
+import json
 
 def main():
     molecule = Molecule().fromSMILES('CC(C)(C)C(C)(C)C')
     t_parallel = 0
     t_non_parallel = 0
-    t_futures = 0
+    # t_futures = 0
+    t_fragment = 0
     symmetryNumber = 1
     for atom1 in molecule.atoms:
         for atom2 in atom1.bonds:
@@ -15,10 +17,12 @@ def main():
             if atomIdx1 < atomIdx2:
                 # parallel calculation
                 n1 = time.time()
-                tuple_s_t = calculateBondSymmetryNumber_parallel(molecule, atom1, atom2)
+                # tuple_s_t = calculateBondSymmetryNumber_parallel(molecule, atom1, atom2)
+                tuple_s_t = calculateBondSymmetryNumber_fragment(molecule, atom1, atom2)
                 n2 = time.time()
                 symmetryNumber *= tuple_s_t[0]
-                t_futures += tuple_s_t[1]
+                # t_futures += tuple_s_t[1]
+                t_fragment += tuple_s_t[1]
                 t_parallel += (n2-n1)*10**3
                 # for non-parallel calculation
                 n1 = time.time()
@@ -26,8 +30,13 @@ def main():
                 n2 = time.time()
                 t_non_parallel += (n2-n1)*10**3
     logger.info( 'Parallel Time: {0:.4f} milliseconds'.format(t_parallel))
-    logger.info( 'Scoop Futures Time: {0:.4f} milliseconds'.format(t_futures))
+    logger.info( 'Scoop Futures Time: {0:.4f} milliseconds'.format(t_fragment))
     logger.info( 'Non_Parallel Time: {0:.4f} milliseconds'.format(t_non_parallel))
+    elapsedTime = {'t_parallel': t_parallel, 't_futures': t_fragment, 't_non_parallel': t_non_parallel}
+    with open('times.json', 'a') as timeFile:
+        json.dump(elapsedTime, timeFile)
+        timeFile.write('\n')
+
 
 def testBondSymmetryNumberEthane():
         """
