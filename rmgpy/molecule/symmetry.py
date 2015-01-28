@@ -344,17 +344,29 @@ def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
 
                 if len(groups1) == len(groups2):
                     groups2OrderList = list(permutations(range(len(groups2))))
-                    groupsIsomorphism = False
-                    idx = 0
-                    while (not groupsIsomorphism) and (idx < len(groups2OrderList)):
-                        n1 = time.time()
-                        groupsIsomorphism = groups_isomorphism(groups1, groups2, groups2OrderList[idx])
-                        n2 = time.time()
-                        t_futures += (n2-n1)*10**3
-                        if groupsIsomorphism:
-                            symmetryNumber *= 2
-                        else:
-                            idx += 1
+
+                    # Parallelize all the 6 if-elif cases
+                    n1 = time.time()
+                    tasks = [futures.submit(groups_isomorphism, groups1, groups2, groups2Order)
+                             for groups2Order in groups2OrderList]
+                    groupsIsomorphismList = [task.result() for task in tasks]
+                    if True in groupsIsomorphismList:
+                        symmetryNumber *= 2
+                    n2 = time.time()
+                    t_futures += (n2-n1)*10**3
+
+                    # Using while-do to replace original 6 if-elif cases
+                    # groupsIsomorphism = False
+                    # idx = 0
+                    # while (not groupsIsomorphism) and (idx < len(groups2OrderList)):
+                    #     n1 = time.time()
+                    #     groupsIsomorphism = groups_isomorphism(groups1, groups2, groups2OrderList[idx])
+                    #     n2 = time.time()
+                    #     t_futures += (n2-n1)*10**3
+                    #     if groupsIsomorphism:
+                    #         symmetryNumber *= 2
+                    #     else:
+                    #         idx += 1
 
     return (symmetryNumber, t_futures)
 

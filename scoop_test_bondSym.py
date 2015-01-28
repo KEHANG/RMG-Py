@@ -7,8 +7,7 @@ def main():
     molecule = Molecule().fromSMILES('CC(C)(C)C(C)(C)C')
     t_parallel = 0
     t_non_parallel = 0
-    # t_futures = 0
-    t_fragment = 0
+    t_futures = 0
     t_ifelif = 0
     symmetryNumber1 = 1
     symmetryNumber2 = 1
@@ -20,24 +19,24 @@ def main():
                 # parallel calculation
                 n1 = time.time()
                 # tuple_s_t = calculateBondSymmetryNumber_parallel(molecule, atom1, atom2)
-                tuple_s_t = calculateBondSymmetryNumber_fragment(molecule, atom1, atom2)
+                tuple_s_t1 = calculateBondSymmetryNumber_parallel(molecule, atom1, atom2)
                 n2 = time.time()
-                symmetryNumber1 *= tuple_s_t[0]
-                # t_futures += tuple_s_t[1]
-                t_fragment += tuple_s_t[1]
                 t_parallel += (n2-n1)*10**3
+                symmetryNumber1 *= tuple_s_t1[0]
+                t_futures += tuple_s_t1[1]
+
                 # for non-parallel calculation
-                n1 = time.time()
+                n3 = time.time()
                 tuple_s_t2 = calculateBondSymmetryNumber_ifelif(molecule, atom1, atom2)
-                n2 = time.time()
-                t_non_parallel += (n2-n1)*10**3
+                n4 = time.time()
+                t_parallel += (n4-n3)*10**3
                 symmetryNumber2 *= tuple_s_t2[0]
                 t_ifelif += tuple_s_t2[1]
     # logger.info( 'Parallel Time: {0:.4f} milliseconds'.format(t_parallel))
     # logger.info( 'Scoop Futures Time: {0:.4f} milliseconds'.format(t_futures))
     # logger.info( 'Non_Parallel Time: {0:.4f} milliseconds'.format(t_non_parallel))
     logger.info('newSymNum: {0}; oldSymNum: {1}'.format(symmetryNumber1, symmetryNumber2))
-    elapsedTime = {'t_parallel/ms': t_parallel, 't_fragment/ms': t_fragment,
+    elapsedTime = {'t_parallel/ms': t_parallel, 't_futures/ms': t_futures,
                    't_non_parallel/ms': t_non_parallel, 't_ifelif/ms': t_ifelif}
     with open('times.json', 'a') as timeFile:
         json.dump(elapsedTime, timeFile)
