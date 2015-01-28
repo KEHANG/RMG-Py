@@ -29,7 +29,7 @@ def main():
                 n3 = time.time()
                 tuple_s_t2 = calculateBondSymmetryNumber_ifelif(molecule, atom1, atom2)
                 n4 = time.time()
-                t_parallel += (n4-n3)*10**3
+                t_non_parallel += (n4-n3)*10**3
                 symmetryNumber2 *= tuple_s_t2[0]
                 t_ifelif += tuple_s_t2[1]
     # logger.info( 'Parallel Time: {0:.4f} milliseconds'.format(t_parallel))
