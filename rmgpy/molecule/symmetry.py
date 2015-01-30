@@ -215,7 +215,7 @@ def calculateBondSymmetryNumber_ifelif(molecule, atom1, atom2):
             # An O-O bond is considered to be an "optical isomer" and so no
             # symmetry correction will be applied
             if atom1.atomType.label == 'Os' and atom2.atomType.label == 'Os' and atom1.radicalElectrons == atom2.radicalElectrons == 0:
-                return symmetryNumber
+                return (symmetryNumber, t_ifelif)
             # If the molecule is diatomic, then we don't have to check the
             # ligands on the two atoms in this bond (since we know there
             # aren't any)
@@ -229,7 +229,7 @@ def calculateBondSymmetryNumber_ifelif(molecule, atom1, atom2):
                 atom1 = structure.atoms[molecule.atoms.index(atom1)]
                 atom2 = structure.atoms[molecule.atoms.index(atom2)]
                 fragments = structure.split()
-                if len(fragments) != 2: return symmetryNumber
+                if len(fragments) != 2: return (symmetryNumber, t_ifelif)
 
                 fragment1, fragment2 = fragments
                 if atom1 in fragment1.atoms: fragment1.removeAtom(atom1)
@@ -270,7 +270,7 @@ def calculateBondSymmetryNumber_fragment(molecule, atom1, atom2):
             # An O-O bond is considered to be an "optical isomer" and so no
             # symmetry correction will be applied
             if atom1.atomType.label == 'Os' and atom2.atomType.label == 'Os' and atom1.radicalElectrons == atom2.radicalElectrons == 0:
-                return symmetryNumber
+                return (symmetryNumber, t_fragment)
             # If the molecule is diatomic, then we don't have to check the
             # ligands on the two atoms in this bond (since we know there
             # aren't any)
@@ -284,7 +284,7 @@ def calculateBondSymmetryNumber_fragment(molecule, atom1, atom2):
                 atom1 = structure.atoms[molecule.atoms.index(atom1)]
                 atom2 = structure.atoms[molecule.atoms.index(atom2)]
                 fragments = structure.split()
-                if len(fragments) != 2: return symmetryNumber
+                if len(fragments) != 2: return (symmetryNumber, t_fragment)
 
                 fragment1, fragment2 = fragments
                 if atom1 in fragment1.atoms: fragment1.removeAtom(atom1)
@@ -316,7 +316,7 @@ def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
             # An O-O bond is considered to be an "optical isomer" and so no
             # symmetry correction will be applied
             if atom1.atomType.label == 'Os' and atom2.atomType.label == 'Os' and atom1.radicalElectrons == atom2.radicalElectrons == 0:
-                return symmetryNumber
+                return (symmetryNumber, t_futures)
             # If the molecule is diatomic, then we don't have to check the
             # ligands on the two atoms in this bond (since we know there
             # aren't any)
@@ -330,7 +330,7 @@ def calculateBondSymmetryNumber_parallel(molecule, atom1, atom2):
                 atom1 = structure.atoms[molecule.atoms.index(atom1)]
                 atom2 = structure.atoms[molecule.atoms.index(atom2)]
                 fragments = structure.split()
-                if len(fragments) != 2: return symmetryNumber
+                if len(fragments) != 2: return (symmetryNumber, t_futures)
 
                 fragment1, fragment2 = fragments
                 if atom1 in fragment1.atoms: fragment1.removeAtom(atom1)

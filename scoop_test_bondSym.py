@@ -4,7 +4,8 @@ import time
 import json
 
 def main():
-    molecule = Molecule().fromSMILES('CC(C)(C)C(C)(C)C')
+    # molecule = Molecule().fromSMILES('CC(C)(C)C(C)(C)C')
+    molecule = Molecule().fromSMILES('CC(C)CCC[C@@H](C)[C@H]1CC[C@@]2([H])[C@]3([H])CC=C4C[C@@H](O)CC[C@]4(C)[C@@]3([H])CC[C@]12C')#cholesterol
     t_parallel = 0
     t_non_parallel = 0
     t_futures = 0
@@ -20,6 +21,7 @@ def main():
                 n1 = time.time()
                 # tuple_s_t = calculateBondSymmetryNumber_parallel(molecule, atom1, atom2)
                 tuple_s_t1 = calculateBondSymmetryNumber_parallel(molecule, atom1, atom2)
+                print 'tuple_s_t1: ', tuple_s_t1
                 n2 = time.time()
                 t_parallel += (n2-n1)*10**3
                 symmetryNumber1 *= tuple_s_t1[0]
@@ -35,7 +37,7 @@ def main():
     # logger.info( 'Parallel Time: {0:.4f} milliseconds'.format(t_parallel))
     # logger.info( 'Scoop Futures Time: {0:.4f} milliseconds'.format(t_futures))
     # logger.info( 'Non_Parallel Time: {0:.4f} milliseconds'.format(t_non_parallel))
-    logger.info('newSymNum: {0}; oldSymNum: {1}'.format(symmetryNumber1, symmetryNumber2))
+    logger.info('newSymNum: {0}; oldSymNum: {1}\n'.format(symmetryNumber1, symmetryNumber2))
     elapsedTime = {'t_parallel/ms': t_parallel, 't_futures/ms': t_futures,
                    't_non_parallel/ms': t_non_parallel, 't_ifelif/ms': t_ifelif}
     with open('times.json', 'a') as timeFile:
