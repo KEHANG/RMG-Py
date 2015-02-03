@@ -4,8 +4,8 @@ import time
 import json
 
 def main():
-    molecule = Molecule().fromSMILES('CC(C)CCC[C@@H](C)[C@H]1CC[C@@]2([H])[C@]3([H])CC=C4C[C@@H](O)CC[C@]4(C)[C@@]3([H])CC[C@]12C')#cholesterol
-    # molecule = Molecule().fromSMILES('C(C(C1CCC1)(C2CCC2)C3CCC3)(C4CCC4)(C5CCC5)C6CCC6')#six-quares
+    # molecule = Molecule().fromSMILES('CC(C)CCC[C@@H](C)[C@H]1CC[C@@]2([H])[C@]3([H])CC=C4C[C@@H](O)CC[C@]4(C)[C@@]3([H])CC[C@]12C')#cholesterol
+    molecule = Molecule().fromSMILES('C1(C(C(C(C(C1C2CCC2)C3CCC3)C4CCC4)C5CCC5)C6CCC6)C7CCC7')#seven rings
     t_futures = 0
     t_ifelif = 0
     # parallel calculation
