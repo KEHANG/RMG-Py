@@ -881,7 +881,7 @@ def calculateCyclicSymmetryNumber_parallel(molecule):
         minEquivalentGroups = resultEqGroup[tag][0]
         maxEquivalentGroups = resultEqGroup[tag][1]
         minEquivalentBonds = resultEqBond[tag][0]
-        maxEquivalentBonds = resultEqGroup[tag][1]
+        maxEquivalentBonds = resultEqBond[tag][1]
         if maxEquivalentGroups == maxEquivalentBonds == len(rings[tag]):
             symmetryNumber *= len(rings[tag]) * 2
         else:

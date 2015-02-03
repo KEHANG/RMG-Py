@@ -21,7 +21,7 @@ def main():
     tuple_serial = calculateCyclicSymmetryNumber(molecule)
     n4 = time.time()
     t_serial = (n4 - n3)*10**3
-    symNum_ser = tuple_serial[0]
+    symNum_ser = tuple_serial# just for original cyclic function
     t_eqGroup_ser = tuple_serial# just for original cyclic function
     t_eqBond_ser = tuple_serial# just for original cyclic function
 
