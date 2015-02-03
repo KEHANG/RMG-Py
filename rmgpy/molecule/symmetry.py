@@ -562,34 +562,23 @@ def calculateCyclicSymmetryNumber(molecule):
     from rdkit.Chem.rdchem import Mol 
 
     symmetryNumber = 1
-    
-    molecule = molecule.copy(True)
+
     rings = molecule.getSmallestSetOfSmallestRings()
-    try: 
-        mcopy = molecule.toRDKitMol(removeHs=True, returnMapping=False)
-        SanitizeMol(mcopy)
-    except:
-        # RDKit failed
-        mcopy = None
-        pass
-    
+
+    t_eqGroups = 0
+    t_eqBonds = 0
     # Get symmetry number for each ring in structure
     for ring0 in rings:
-
+        # *********************************************#
+        # ****Section1: Calculate minMaxEqGroups*******#
+        # *********************************************#
+        n1 = time.time()
         # Make another copy structure
         structure = molecule.copy(True)
+        # Since atoms in structure have different addresses than those in molecule,
+        # the following line is mainly to only use atoms in structure to be present
+        # in ring list
         ring = [structure.atoms[molecule.atoms.index(atom)] for atom in ring0]
-        
-        # Figure out which atoms and bonds are aromatic and reassign appropriately:
-        if mcopy is not None:
-            for i, atom1 in enumerate(ring0):
-                for atom2 in ring0[i+1:]:
-                    if molecule.hasBond(atom1, atom2):
-                        if mcopy.GetBondBetweenAtoms(i,i+1) is not None:
-                            if str(mcopy.GetBondBetweenAtoms(i,i+1).GetBondType()) == 'AROMATIC':
-                                bond = molecule.getBond(atom1, atom2)
-                                bond.applyAction(['CHANGE_BOND', atom1, 'B', atom2])
-                                atom1.atomType = atom2.atomType = rmgpy.molecule.atomTypes['Cb']
         
         # Remove bonds of ring from structure
         for i, atom1 in enumerate(ring):
@@ -624,7 +613,17 @@ def calculateCyclicSymmetryNumber(molecule):
                 # No matching group found, so add it as a new group
                 equivalentGroups.append(group)
                 equivalentGroupCount.append(1)
+        # Find maximum number of equivalent groups and bonds
+        minEquivalentGroups = min(equivalentGroupCount)
+        maxEquivalentGroups = max(equivalentGroupCount)
 
+        n2 = time.time()
+        t_eqGroups += (n2-n1)*10**3
+
+        # *********************************************#
+        # ****Section2: Calculate minMaxEqBonds********#
+        # *********************************************#
+        n3 = time.time()
         # Find equivalent bonds on ring
         equivalentBonds = []
         for i, atom1 in enumerate(ring0):
@@ -635,14 +634,12 @@ def calculateCyclicSymmetryNumber(molecule):
                     for eqBond in equivalentBonds:
                         if not found:
                             if bond.equivalent(eqBond[0]):
-                                eqBond.append(group)
+                                eqBond.append(1)
                                 found = True
                     if not found:
                         equivalentBonds.append([bond])
 
         # Find maximum number of equivalent groups and bonds
-        minEquivalentGroups = min(equivalentGroupCount)
-        maxEquivalentGroups = max(equivalentGroupCount)
         minEquivalentBonds = None
         maxEquivalentBonds = 0
         for bonds in equivalentBonds:
@@ -651,6 +648,8 @@ def calculateCyclicSymmetryNumber(molecule):
                 minEquivalentBonds = N
             if N > maxEquivalentBonds:
                 maxEquivalentBonds = N
+        n4 = time.time()
+        t_eqBonds += (n4-n3)*10**3
 
         if maxEquivalentGroups == maxEquivalentBonds == len(ring):
             symmetryNumber *= len(ring) * 2
@@ -660,6 +659,220 @@ def calculateCyclicSymmetryNumber(molecule):
 
     return symmetryNumber
 
+def calculateCyclicSymmetryNumber_serial(molecule):
+    """
+    Get the symmetry number correction for cyclic regions of a molecule.
+    For complicated fused rings the smallest set of smallest rings is used.
+    """
+    from rdkit.Chem.rdmolops import SanitizeMol
+    from rdkit.Chem.rdchem import Mol
+
+    symmetryNumber = 1
+
+    rings = molecule.getSmallestSetOfSmallestRings()
+
+    t_eqGroups = 0
+    t_eqBonds = 0
+    # Get symmetry number for each ring in structure
+    for ring0 in rings:
+        # *********************************************#
+        # ****Section1: Calculate minMaxEqGroups*******#
+        # *********************************************#
+        n1 = time.time()
+        # Make another copy structure
+        structure = molecule.copy(True)
+        # Since atoms in structure have different addresses than those in molecule,
+        # the following line is mainly to only use atoms in structure to be present
+        # in ring list
+        ring = [structure.atoms[molecule.atoms.index(atom)] for atom in ring0]
+
+        # Remove bonds of ring from structure
+        for i, atom1 in enumerate(ring):
+            for atom2 in ring[i+1:]:
+                if structure.hasBond(atom1, atom2):
+                    structure.removeBond(atom1.edges[atom2])
+
+        structures = structure.split()
+        groups = []
+        for struct in structures:
+            for atom in ring:
+                if struct.hasAtom(atom): struct.removeAtom(atom)
+            groups.append(struct.split())
+        # Find equivalent functional groups on ring
+        equivalentGroups = []; equivalentGroupCount = []
+        for group in groups:
+            found = False
+            for i, eqGroup in enumerate(equivalentGroups):
+                if not found and len(group) == len(eqGroup):
+                    for g, eg in zip(group, eqGroup):
+                        if not g.isIsomorphic(eg):
+                            # The groups do not match
+                            break
+                    else:
+                        # The groups match
+                        found = True
+                if found:
+                    # We've found a matching group, so increment its count
+                    equivalentGroupCount[i] += 1
+                    break
+            else:
+                # No matching group found, so add it as a new group
+                equivalentGroups.append(group)
+                equivalentGroupCount.append(1)
+        # Find maximum number of equivalent groups and bonds
+        minEquivalentGroups = min(equivalentGroupCount)
+        maxEquivalentGroups = max(equivalentGroupCount)
+
+        n2 = time.time()
+        t_eqGroups += (n2-n1)*10**3
+
+        # *********************************************#
+        # ****Section2: Calculate minMaxEqBonds********#
+        # *********************************************#
+        n3 = time.time()
+        # Find equivalent bonds on ring
+        equivalentBonds = []
+        for i, atom1 in enumerate(ring0):
+            for atom2 in ring0[i+1:]:
+                if molecule.hasBond(atom1, atom2):
+                    bond = molecule.getBond(atom1, atom2)
+                    found = False
+                    for eqBond in equivalentBonds:
+                        if not found:
+                            if bond.equivalent(eqBond[0]):
+                                eqBond.append(1)
+                                found = True
+                    if not found:
+                        equivalentBonds.append([bond])
+
+        # Find maximum number of equivalent groups and bonds
+        minEquivalentBonds = None
+        maxEquivalentBonds = 0
+        for bonds in equivalentBonds:
+            N = len(bonds)
+            if minEquivalentBonds is None or N < minEquivalentBonds:
+                minEquivalentBonds = N
+            if N > maxEquivalentBonds:
+                maxEquivalentBonds = N
+        n4 = time.time()
+        t_eqBonds += (n4-n3)*10**3
+
+        if maxEquivalentGroups == maxEquivalentBonds == len(ring):
+            symmetryNumber *= len(ring) * 2
+        else:
+            symmetryNumber *= min(minEquivalentGroups, minEquivalentBonds)
+
+
+    return (symmetryNumber, t_eqGroups, t_eqBonds)
+
+def calculateCyclicSymmetryNumber_parallel(molecule):
+    """
+    Get the symmetry number correction for cyclic regions of a molecule.
+    For complicated fused rings the smallest set of smallest rings is used.
+    """
+    from rdkit.Chem.rdmolops import SanitizeMol
+    from rdkit.Chem.rdchem import Mol
+
+    symmetryNumber = 1
+
+    # molecule = molecule.copy(True)
+    rings = molecule.getSmallestSetOfSmallestRings()
+
+    n1 = time.time()
+    tasksEqGroup = [futures.submit(calculateMinMaxEqGroups, molecule, ring0, i) for i, ring0 in enumerate(rings)]
+    n3 = time.time()
+    tasksEqBond = [futures.submit(calculateMinMaxEqBonds, molecule, ring0, i) for i, ring0 in enumerate(rings)]
+    resultEqGroup = {task.result()[2]:task.result()[0:2] for task in tasksEqGroup}
+    n2 = time.time()
+    resultEqBond = {task.result()[2]:task.result()[0:2] for task in tasksEqBond}
+    n4 = time.time()
+    t_eqGroups = (n2-n1)*10**3
+    t_eqBonds = (n4-n3)*10**3
+
+    for tag in range(len(rings)):
+        minEquivalentGroups = resultEqGroup[tag][0]
+        maxEquivalentGroups = resultEqGroup[tag][1]
+        minEquivalentBonds = resultEqBond[tag][0]
+        maxEquivalentBonds = resultEqGroup[tag][1]
+        if maxEquivalentGroups == maxEquivalentBonds == len(rings[i]):
+            symmetryNumber *= len(rings[i]) * 2
+        else:
+            symmetryNumber *= min(minEquivalentGroups, minEquivalentBonds)
+
+    return (symmetryNumber, t_eqGroups, t_eqBonds)
+
+
+def calculateMinMaxEqGroups(molecule, ring0, tag):
+
+    # Make another copy structure
+    structure = molecule.copy(True)
+    # Since atoms in structure have different addresses than those in molecule,
+    # the following line is mainly to only use atoms in structure to be present
+    # in ring list
+    ring = [structure.atoms[molecule.atoms.index(atom)] for atom in ring0]
+    # Remove bonds of ring from structure
+    for i, atom1 in enumerate(ring):
+        for atom2 in ring[i+1:]:
+            if structure.hasBond(atom1, atom2):
+                structure.removeBond(atom1.edges[atom2])
+
+    structures = structure.split()
+    groups = []
+    for struct in structures:
+        for atom in ring:
+            if struct.hasAtom(atom): struct.removeAtom(atom)
+        groups.append(struct.split())
+    # Find equivalent functional groups on ring
+    equivalentGroups = []; equivalentGroupCount = []
+    for group in groups:
+        found = False
+        for i, eqGroup in enumerate(equivalentGroups):
+            if not found and len(group) == len(eqGroup):
+                for g, eg in zip(group, eqGroup):
+                    if not g.isIsomorphic(eg):
+                        # The groups do not match
+                        break
+                else:
+                    # The groups match
+                    found = True
+            if found:
+                # We've found a matching group, so increment its count
+                equivalentGroupCount[i] += 1
+                break
+        else:
+            # No matching group found, so add it as a new group
+            equivalentGroups.append(group)
+            equivalentGroupCount.append(1)
+    minEquivalentGroups = min(equivalentGroupCount)
+    maxEquivalentGroups = max(equivalentGroupCount)
+    return (minEquivalentGroups, maxEquivalentGroups, tag)
+
+def calculateMinMaxEqBonds(molecule, ring0, tag):
+    # Find equivalent bonds on ring
+    equivalentBonds = []
+    for i, atom1 in enumerate(ring0):
+        for atom2 in ring0[i+1:]:
+            if molecule.hasBond(atom1, atom2):
+                bond = molecule.getBond(atom1, atom2)
+                found = False
+                for eqBond in equivalentBonds:
+                    if not found:
+                        if bond.equivalent(eqBond[0]):
+                            eqBond.append(1)
+                            found = True
+                if not found:
+                    equivalentBonds.append([bond])
+
+    # Find maximum number of equivalent groups and bonds
+    minEquivalentBonds = None
+    maxEquivalentBonds = 0
+    for bonds in equivalentBonds:
+        N = len(bonds)
+        if minEquivalentBonds is None or N < minEquivalentBonds:
+            minEquivalentBonds = N
+        if N > maxEquivalentBonds:
+            maxEquivalentBonds = N
+    return (minEquivalentBonds, maxEquivalentBonds, tag)
 ################################################################################
 
 def identity(number):
