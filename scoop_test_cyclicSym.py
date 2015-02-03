@@ -18,12 +18,12 @@ def main():
     t_eqBond_par = tuple_parallel[2]
     # serial calculation
     n3 = time.time()
-    tuple_serial = calculateCyclicSymmetryNumber_serial(molecule)
+    tuple_serial = calculateCyclicSymmetryNumber(molecule)
     n4 = time.time()
     t_serial = (n4 - n3)*10**3
     symNum_ser = tuple_serial[0]
-    t_eqGroup_ser = tuple_serial[1]
-    t_eqBond_ser = tuple_serial[2]
+    t_eqGroup_ser = tuple_serial# just for original cyclic function
+    t_eqBond_ser = tuple_serial# just for original cyclic function
 
     logger.info('CylicSymNum_parallel: {0}; CylicSymNum_serial: {1}\n'.format(symNum_par, symNum_ser))
     elapsedTime = {'t_parallel/ms': t_parallel, 't_eqGroup_par/ms': t_eqGroup_par, 't_eqBond_par/ms': t_eqBond_par,
