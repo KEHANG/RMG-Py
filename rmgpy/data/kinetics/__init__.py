@@ -366,6 +366,28 @@ class KineticsDatabase(object):
         reactionList.extend(self.generateReactionsFromFamilies(reactants, products, failsSpeciesConstraints=failsSpeciesConstraints))
         return reactionList
 
+    def generateReactions_parallel(self, reactants, products=None, failsSpeciesConstraints=None):
+        """
+        Generate all reactions between the provided list of one or two
+        `reactants`, which should be :class:`Molecule` objects. This method
+        searches the depository, libraries, and groups, in that order.
+        """
+        from scoop import futures
+        reactionList = []
+        library_tasks = [futures.submit(self.generateReactionsFromLibrary, reactants, products, self.libraries[label], failsSpeciesConstraints=failsSpeciesConstraints)
+                         for label, libraryType in self.libraryOrder
+                         if libraryType == "Reaction Library"]
+
+        if len(reactants) == 2 and reactants[0] == reactants[1]:
+            reactants[1] = reactants[1].copy(deep=True)
+
+        family_tasks = [futures.submit(family.generateReactions, reactants, failsSpeciesConstraints=failsSpeciesConstraints)
+                        for label, family in self.families.iteritems()]
+        reactionList.extend([library_task.result() for library_task in library_tasks])
+        reactionList.extend([family_task.result() for family_task in family_tasks])
+
+        return reactionList
+
     def generateReactionsFromLibraries(self, reactants, products, failsSpeciesConstraints=None):
         """
         Generate all reactions between the provided list of one or two
