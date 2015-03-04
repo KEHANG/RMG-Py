@@ -108,7 +108,7 @@ class Species(object):
         self.polarizability = polarizability
         self.Zrot = Zrot
         self.energyTransferModel = energyTransferModel        
-        self.props = props or {}
+        self.props = {}
         
         # Check multiplicity of each molecule is the same
         if molecule is not None and len(molecule)>1:

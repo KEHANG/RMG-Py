@@ -639,7 +639,7 @@ class CoreEdgeReactionModel:
                     moleculeB.clearLabeledAtoms()
         return reactionList
 
-    def react_family(self, family, speciesA):
+    def react_family(self, familyKey, speciesA, corespeciesList):
         """
         Generate bimolecular reactions for one specific family
         and species A is different than species B where B is one of old core species
@@ -647,8 +647,10 @@ class CoreEdgeReactionModel:
         :param speciesA: new core species
         :return: a list of new reactions
         """
+        from scoop import shared
         reactionList = []
-        for oldCoreSpecies in self.core.species:
+        family = shared.getConst("database_kinetics_families")[familyKey]
+        for oldCoreSpecies in corespeciesList:
             if oldCoreSpecies.reactive:
                 for molA in speciesA.molecule:
                     for molB in oldCoreSpecies.molecule:
@@ -669,6 +671,7 @@ class CoreEdgeReactionModel:
         is a :class:`rmg.unirxn.network.Network` object, then reactions are
         generated for the species in the network with the largest leak flux.
         """
+        from scoop.futures import map
         database = rmgpy.data.rmg.database
         
         if not isinstance(newObject, list):
@@ -705,8 +708,20 @@ class CoreEdgeReactionModel:
                     # Find reactions involving the new species as bimolecular reactants
                     # or products with other core species (e.g. A + B <---> products)
                     # generate all the reactions family by family which is helpful to parallelism
-                    for label, family in database.kinetics.families.iteritems():
-                        newReactions.extend(self.react_family(family, newSpecies))
+                    # for label, family in database.kinetics.families.iteritems():
+                    #     newReactions.extend(self.react_family(family, newSpecies))
+
+                    # scoop parallelizes the loop of react_family
+                    familyKeys = database.kinetics.families.keys()
+                    corespeciesList = self.core.species
+
+                    families_num = len(familyKeys)
+                    react_family_task_results = list(map(self.react_family, familyKeys,
+                                                         [newSpecies]*families_num, [corespeciesList]*families_num))
+                    for family_idx in range(families_num):
+                        logging.info("{0} reactions generated from this family"
+                                     .format(len(react_family_task_results[family_idx])))
+                        newReactions.extend(react_family_task_results[family_idx])
 
                     # Find reactions involving the new species as bimolecular reactants
                     # or products with itself (e.g. A + A <---> products)
@@ -745,7 +760,7 @@ class CoreEdgeReactionModel:
                             newReactions = network.exploreIsomer(species, self, database)
                             self.processNewReactions(newReactions, species, network)
                             network.updateConfigurations(self)
-                            index = 0
+                            # index = 0
                             break
                     else:
                         index += 1

@@ -1144,8 +1144,13 @@ class KineticsFamily(Database):
         from rmgpy.data.rmg import database
         if self.forbidden is not None and self.forbidden.isMoleculeForbidden(molecule):
             return True
-        if database.forbiddenStructures.isMoleculeForbidden(molecule):
-            return True
+        if database != None:
+            if database.forbiddenStructures.isMoleculeForbidden(molecule):
+                return True
+        else:
+            from scoop import shared
+            if shared.getConst("database_forbiddenStructures").isMoleculeForbidden(molecule):
+                return True
         return False
 
     def __createReaction(self, reactants, products, isForward):
