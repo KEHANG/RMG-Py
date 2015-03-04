@@ -299,6 +299,14 @@ class RMG:
             logging.info('Filling in rate rules in kinetics families by averaging...')
             for family in self.database.kinetics.families.values():
                 family.fillKineticsRulesByAveragingUp()
+
+        from scoop import shared
+        import rmgpy.data.rmg
+        # set shared constant
+        database = rmgpy.data.rmg.database
+        families = database.kinetics.families
+        shared.setConst(database_kinetics_families = families) # families is a dictionary
+        shared.setConst(database_forbiddenStructures = database.forbiddenStructures)
     
     def initialize(self, args):
         """
