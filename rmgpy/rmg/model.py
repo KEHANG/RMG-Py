@@ -760,7 +760,7 @@ class CoreEdgeReactionModel:
                             newReactions = network.exploreIsomer(species, self, database)
                             self.processNewReactions(newReactions, species, network)
                             network.updateConfigurations(self)
-                            # index = 0
+                            index = 0
                             break
                     else:
                         index += 1
