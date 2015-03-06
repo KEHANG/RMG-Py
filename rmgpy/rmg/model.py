@@ -467,15 +467,11 @@ class CoreEdgeReactionModel:
         rxn.products.sort()
 
         # Get the short-list of reactions with the same family, reactant1 and reactant2
-        r1 = rxn.reactants[0].label
+        r1 = rxn.reactants[0]
         if len(rxn.reactants)==1: r2 = None
-        else: r2 = rxn.reactants[1].label
+        else: r2 = rxn.reactants[1]
         family = rxn.family
 
-        for existing_family in self.reactionDict.keys():
-            if existing_family.label == family.label:
-                family = existing_family
-                break
         try:
             my_reactionList = self.reactionDict[family][r1][r2][:]
         except KeyError: # no such short-list: must be new, unless in seed.
@@ -484,9 +480,9 @@ class CoreEdgeReactionModel:
         # if the family is its own reverse (H-Abstraction) then check the other direction
         if isinstance(family,KineticsFamily) and family.ownReverse: # (family may be a KineticsLibrary)
             # Get the short-list of reactions with the same family, product1 and product2
-            r1 = rxn.products[0].label
+            r1 = rxn.products[0]
             if len(rxn.products)==1: r2 = None
-            else: r2 = rxn.products[1].label
+            else: r2 = rxn.products[1]
             try:
                 my_reactionList.extend(self.reactionDict[family][r1][r2])
             except KeyError: # no such short-list: must be new, unless in seed.
@@ -505,11 +501,6 @@ class CoreEdgeReactionModel:
             if isinstance(family,KineticsFamily) and family.ownReverse:
                 if (rxn0.reactants == rxn.products and rxn0.products == rxn.reactants):
                     return True, rxn0
-                if rxn0.isIsomorphic(rxn):
-                    # for cases where the reactants and products are in same structures
-                    #  but different objects (i.e. different memory address). those cases
-                    # happen when the reactions are generated using parallel computing
-                    return True, rxn0
 
 
         # Now check seed mechanisms
@@ -519,9 +510,9 @@ class CoreEdgeReactionModel:
             if isinstance(family0, KineticsLibrary) and family0 != family:
 
                 # First check seed short-list in forward direction
-                r1 = rxn.reactants[0].label
+                r1 = rxn.reactants[0]
                 if len(rxn.reactants)==1: r2 = None
-                else: r2 = rxn.reactants[1].label
+                else: r2 = rxn.reactants[1]
                 try:
                     my_reactionList = self.reactionDict[family0][r1][r2]
                 except KeyError:
@@ -531,9 +522,9 @@ class CoreEdgeReactionModel:
                         (rxn0.reactants == rxn.products and rxn0.products == rxn.reactants):
                         return True, rxn0
                 # Now get the seed short-list of the reverse reaction
-                r1 = rxn.products[0].label
+                r1 = rxn.products[0]
                 if len(rxn.products)==1: r2 = None
-                else: r2 = rxn.products[1].label
+                else: r2 = rxn.products[1]
                 try:
                     my_reactionList = self.reactionDict[family0][r1][r2]
                 except KeyError:
@@ -595,15 +586,11 @@ class CoreEdgeReactionModel:
         
         # Add to the global dict/list of existing reactions (a list broken down by family, r1, r2)
         # identify r1 and r2
-        r1 = forward.reactants[0].label
-        r2 = None if len(forward.reactants) == 1 else forward.reactants[1].label
+        r1 = forward.reactants[0]
+        r2 = None if len(forward.reactants) == 1 else forward.reactants[1]
         family = forward.family
         # make dictionary entries if necessary
-        for existing_family in self.reactionDict.keys():
-            if existing_family.label == family.label:
-                family = existing_family
-                break
-        else:
+        if family not in self.reactionDict:
             self.reactionDict[family] = {}
         if not self.reactionDict[family].has_key(r1):
             self.reactionDict[family][r1] = dict()
@@ -740,16 +727,21 @@ class CoreEdgeReactionModel:
                     #     newReactions.extend(self.react_family(family, newSpecies))
 
                     # scoop parallelizes the loop of react_family
-                    familyKeys = database.kinetics.families.keys()
+                    families = database.kinetics.families
+                    familyKeys = families.keys()
                     corespeciesList = self.core.species
 
                     families_num = len(familyKeys)
                     react_family_task_results = list(map(self.react_family, familyKeys,
                                                          [newSpecies]*families_num, [corespeciesList]*families_num))
                     for family_idx in range(families_num):
-                        logging.info("{0} reactions generated from this family"
-                                     .format(len(react_family_task_results[family_idx])))
-                        newReactions.extend(react_family_task_results[family_idx])
+                        reactions_family = react_family_task_results[family_idx]
+                        logging.info("{0} reactions generated from this family {1} with index {2}"
+                                     .format(len(reactions_family), familyKeys[family_idx], family_idx))
+                        for reaction_family in reactions_family:
+                            reaction_family.family = families[familyKeys[family_idx]]
+
+                        newReactions.extend(reactions_family)
 
                     # Find reactions involving the new species as bimolecular reactants
                     # or products with itself (e.g. A + A <---> products)
