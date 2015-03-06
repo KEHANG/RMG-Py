@@ -305,8 +305,11 @@ class RMG:
         # set shared constant
         database = rmgpy.data.rmg.database
         families = database.kinetics.families
+        logging.info("Sharing kinetics families....")
         shared.setConst(database_kinetics_families = families) # families is a dictionary
+        logging.info("Sharing forbiddenStructures...")
         shared.setConst(database_forbiddenStructures = database.forbiddenStructures)
+        logging.info("Done broadcasting.")
     
     def initialize(self, args):
         """
