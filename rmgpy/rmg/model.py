@@ -38,6 +38,7 @@ import numpy
 import os.path
 import itertools
 import gc
+import time
 
 from rmgpy.display import display
 #import rmgpy.chemkin
@@ -711,6 +712,7 @@ class CoreEdgeReactionModel:
                     # generate all the reactions family by family which is helpful to parallelism
                     # for label, family in database.kinetics.families.iteritems():
                     #     newReactions.extend(self.react_family(family, newSpecies))
+                    t_start = time.time()
                     if not parallelMode:
                         for coreSpecies in self.core.species:
                             if coreSpecies.reactive:
@@ -727,8 +729,8 @@ class CoreEdgeReactionModel:
                                                              [newSpecies]*families_num, [corespeciesList]*families_num))
                         for family_idx in range(families_num):
                             reactions_family = react_family_task_results[family_idx]
-                            logging.info("{0} reactions generated from this family {1} with index {2}"
-                                         .format(len(reactions_family), familyKeys[family_idx], family_idx))
+                            # logging.info("{0} reactions generated from this family {1} with index {2}"
+                            #              .format(len(reactions_family), familyKeys[family_idx], family_idx))
                             for reaction_family in reactions_family:
                                 # redirect family to family objects in root-worker
                                 reaction_family.family = families[familyKeys[family_idx]]
@@ -751,6 +753,8 @@ class CoreEdgeReactionModel:
 
                             newReactions.extend(reactions_family)
                         gc.collect()
+                    t_end = time.time()
+                    logging.info("When parallelMode is set as {0}, the react time is {1}/s.".format(parallelMode, t_end-t_start))
 
                     # Find reactions involving the new species as bimolecular reactants
                     # or products with itself (e.g. A + A <---> products)
