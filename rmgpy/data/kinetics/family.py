@@ -1253,6 +1253,53 @@ class KineticsFamily(Database):
             reaction.pairs = [(moleculeDict[reactant],moleculeDict[product]) for reactant, product in reaction.pairs]
 
         return reactionList
+
+    def generateReactions_parallel(self, reactants, failsSpeciesConstraints=None):
+        """
+        Generate all reactions between the provided list of one or two
+        `reactants`, which should be either single :class:`Molecule` objects
+        or lists of same. Does not estimate the kinetics of these reactions
+        at this time. Returns a list of :class:`TemplateReaction` objects
+        using :class:`Species` objects for both reactants and products. The
+        reactions are constructed such that the forward direction is consistent
+        with the template of this reaction family.
+        """
+        reactionList = []
+
+        # Forward direction (the direction in which kinetics is defined)
+        reactionList.extend(self.__generateReactions_parallel(reactants, forward=True, failsSpeciesConstraints=failsSpeciesConstraints))
+
+        if self.ownReverse:
+            # for each reaction, make its reverse reaction and store in a 'reverse' attribute
+            for rxn in reactionList:
+                reactions = self.__generateReactions_parallel(rxn.products, products=rxn.reactants, forward=True, failsSpeciesConstraints=failsSpeciesConstraints)
+                if len(reactions) != 1:
+                    logging.error("Expecting one matching reverse reaction, not {0} in reaction family {1} for forward reaction {2}.\n".format(len(reactions), self.label, str(rxn)))
+                    for reactant in rxn.reactants:
+                        logging.info("Reactant")
+                        logging.info(reactant.toAdjacencyList())
+                    for product in rxn.products:
+                        logging.info("Product")
+                        logging.info(product.toAdjacencyList())
+                    raise KineticsError("Did not find reverse reaction in reaction family {0} for reaction {1}.".format(self.label, str(rxn)))
+                rxn.reverse = reactions[0]
+
+        else: # family is not ownReverse
+            # Reverse direction (the direction in which kinetics is not defined)
+            reactionList.extend(self.__generateReactions_parallel(reactants, forward=False, failsSpeciesConstraints=failsSpeciesConstraints))
+
+        # Return the reactions as containing Species objects, not Molecule objects
+        for reaction in reactionList:
+            moleculeDict = {}
+            for molecule in reaction.reactants:
+                moleculeDict[molecule] = Species(molecule=[molecule])
+            for molecule in reaction.products:
+                moleculeDict[molecule] = Species(molecule=[molecule])
+            reaction.reactants = [moleculeDict[molecule] for molecule in reaction.reactants]
+            reaction.products = [moleculeDict[molecule] for molecule in reaction.products]
+            reaction.pairs = [(moleculeDict[reactant],moleculeDict[product]) for reactant, product in reaction.pairs]
+
+        return reactionList
     
     def calculateDegeneracy(self, reaction):
         """
@@ -1482,6 +1529,220 @@ class KineticsFamily(Database):
         # with the global list of reactions
         return rxnList
 
+    def __generateReactions_parallel(self, reactants, products=None, forward=True, failsSpeciesConstraints=None):
+        """
+        Generate a list of all of the possible reactions of this family between
+        the list of `reactants`. The number of reactants provided must match
+        the number of reactants expected by the template, or this function
+        will return an empty list. Each item in the list of reactants should
+        be a list of :class:`Molecule` objects, each representing a resonance
+        isomer of the species of interest.
+        `failsSpeciesConstraints` is an optional function that accepts a :class:`Molecule`
+        structure and returns `True` if it is forbidden.
+        """
+
+        rxnList = []; speciesList = []
+
+        # Wrap each reactant in a list if not already done (this is done to
+        # allow for passing multiple resonance structures for each molecule)
+        # This also makes a copy of the reactants list so we don't modify the
+        # original
+        reactants = [reactant if isinstance(reactant, list) else [reactant] for reactant in reactants]
+
+        sameReactants = False
+        if len(reactants) == 2 and len(reactants[0]) == len(reactants[1]):
+            reactantA = reactants[0][0]
+            for reactantB in reactants[1]:
+                if reactantA.isIsomorphic(reactantB):
+                    sameReactants = True
+                    break
+
+        if forward:
+            template = self.forwardTemplate
+        elif self.reverseTemplate is None:
+            return []
+        else:
+            template = self.reverseTemplate
+
+        # Unimolecular reactants: A --> products
+        if len(reactants) == 1 and len(template.reactants) == 1:
+
+            # Iterate over all resonance isomers of the reactant
+            for molecule in reactants[0]:
+
+                mappings = self.__matchReactantToTemplate(molecule, template.reactants[0])
+                for map in mappings:
+                    reactantStructures = [molecule]
+                    try:
+                        productStructures = self.__generateProductStructures(reactantStructures, [map], forward, failsSpeciesConstraints=failsSpeciesConstraints)
+                    except ForbiddenStructureException:
+                        pass
+                    else:
+                        if productStructures is not None:
+                            rxn = self.__createReaction(reactantStructures, productStructures, forward)
+                            if rxn: rxnList.append(rxn)
+
+        # Bimolecular reactants: A + B --> products
+        elif len(reactants) == 2 and len(template.reactants) == 2:
+
+            moleculesA = reactants[0]
+            moleculesB = reactants[1]
+
+            # Iterate over all resonance isomers of the reactant
+            for moleculeA in moleculesA:
+                for moleculeB in moleculesB:
+
+                    # Reactants stored as A + B
+                    mappingsA = self.__matchReactantToTemplate(moleculeA, template.reactants[0])
+                    mappingsB = self.__matchReactantToTemplate(moleculeB, template.reactants[1])
+
+                    # Iterate over each pair of matches (A, B)
+                    for mapA in mappingsA:
+                        for mapB in mappingsB:
+                            reactantStructures = [moleculeA, moleculeB]
+                            try:
+                                productStructures = self.__generateProductStructures(reactantStructures, [mapA, mapB], forward, failsSpeciesConstraints=failsSpeciesConstraints)
+                            except ForbiddenStructureException:
+                                pass
+                            else:
+                                if productStructures is not None:
+                                    rxn = self.__createReaction(reactantStructures, productStructures, forward)
+                                    if rxn: rxnList.append(rxn)
+
+                    # Only check for swapped reactants if they are different
+                    if reactants[0] is not reactants[1]:
+
+                        # Reactants stored as B + A
+                        mappingsA = self.__matchReactantToTemplate(moleculeA, template.reactants[1])
+                        mappingsB = self.__matchReactantToTemplate(moleculeB, template.reactants[0])
+
+                        # Iterate over each pair of matches (A, B)
+                        for mapA in mappingsA:
+                            for mapB in mappingsB:
+                                reactantStructures = [moleculeA, moleculeB]
+                                try:
+                                    productStructures = self.__generateProductStructures(reactantStructures, [mapA, mapB], forward, failsSpeciesConstraints=failsSpeciesConstraints)
+                                except ForbiddenStructureException:
+                                    pass
+                                else:
+                                    if productStructures is not None:
+                                        rxn = self.__createReaction(reactantStructures, productStructures, forward)
+                                        if rxn: rxnList.append(rxn)
+        # If products is given, remove reactions from the reaction list that
+        # don't generate the given products
+        if products is not None:
+
+            products = [product.generateResonanceIsomers() for product in products]
+
+            rxnList0 = rxnList[:]
+            rxnList = []
+            index = 0
+            for reaction in rxnList0:
+
+                products0 = reaction.products if forward else reaction.reactants
+
+                # Skip reactions that don't match the given products
+                match = False
+
+                if len(products) == len(products0) == 1:
+                    for product in products[0]:
+                        if products0[0].isIsomorphic(product):
+                            match = True
+                            break
+                elif len(products) == len(products0) == 2:
+                    for productA in products[0]:
+                        for productB in products[1]:
+                            if products0[0].isIsomorphic(productA) and products0[1].isIsomorphic(productB):
+                                match = True
+                                break
+                            elif products0[0].isIsomorphic(productB) and products0[1].isIsomorphic(productA):
+                                match = True
+                                break
+
+                if match:
+                    rxnList.append(reaction)
+
+        # The reaction list may contain duplicates of the same reaction
+        # These duplicates should be combined (by increasing the degeneracy of
+        # one of the copies and removing the others)
+        index0 = 0
+        while index0 < len(rxnList):
+            reaction0 = rxnList[index0]
+
+            products0 = reaction0.products if forward else reaction0.reactants
+            products0 = [product.generateResonanceIsomers() for product in products0]
+
+            # Remove duplicates from the reaction list
+            index = index0 + 1
+            while index < len(rxnList):
+                reaction = rxnList[index]
+
+                products = reaction.products if forward else reaction.reactants
+
+                # We know the reactants are the same, so we only need to compare the products
+                match = False
+                if len(products) == len(products0) == 1:
+                    for product in products0[0]:
+                        if products[0].isIsomorphic(product):
+                            match = True
+                            break
+                elif len(products) == len(products0) == 2:
+                    for productA in products0[0]:
+                        for productB in products0[1]:
+                            if products[0].isIsomorphic(productA) and products[1].isIsomorphic(productB):
+                                match = True
+                                break
+                            elif products[0].isIsomorphic(productB) and products[1].isIsomorphic(productA):
+                                match = True
+                                break
+
+                # If we found a match, remove it from the list
+                # Also increment the reaction path degeneracy of the remaining reaction
+                if match:
+                    rxnList.remove(reaction)
+                    reaction0.degeneracy += 1
+                else:
+                    index += 1
+
+            index0 += 1
+
+        # For R_Recombination reactions, the degeneracy is twice what it should
+        # be, so divide those by two
+        # This is hardcoding of reaction families!
+        # For reactions of the form A + A -> products, the degeneracy is twice
+        # what it should be, so divide those by two
+        if sameReactants or self.label.lower().startswith('r_recombination'):
+            for rxn in rxnList:
+                assert(rxn.degeneracy % 2 == 0)
+                rxn.degeneracy /= 2
+
+        # Determine the reactant-product pairs to use for flux analysis
+        # Also store the reaction template (useful so we can easily get the kinetics later)
+        for reaction in rxnList:
+
+            # Restore the labeled atoms long enough to generate some metadata
+            for reactant in reaction.reactants:
+                reactant.clearLabeledAtoms()
+            for label, atom in reaction.labeledAtoms:
+                atom.label = label
+
+            # Generate metadata about the reaction that we will need later
+            reaction.pairs = self.getReactionPairs(reaction)
+            reaction.template = self.getReactionTemplateLabels(reaction)
+            if not forward:
+                reaction.degeneracy = self.calculateDegeneracy(reaction)
+
+            # Unlabel the atoms
+            for label, atom in reaction.labeledAtoms:
+                atom.label = ''
+
+            # We're done with the labeled atoms, so delete the attribute
+            del reaction.labeledAtoms
+
+        # This reaction list has only checked for duplicates within itself, not
+        # with the global list of reactions
+        return rxnList
+
     def getReactionPairs(self, reaction):
         """
         For a given `reaction` with properly-labeled :class:`Molecule` objects
@@ -1576,6 +1837,14 @@ class KineticsFamily(Database):
         describe the reaction.
         """
         return self.groups.getReactionTemplate(reaction)
+
+    def getReactionTemplateLabels(self, reaction):
+        template = self.getReactionTemplate(reaction)
+        templateLabels = []
+        for entry in template:
+            templateLabels.append(entry.label)
+
+        return templateLabels
 
     def getKineticsForTemplate(self, template, degeneracy=1, method='rate rules'):
         """

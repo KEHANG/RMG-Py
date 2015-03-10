@@ -655,7 +655,7 @@ class CoreEdgeReactionModel:
             if oldCoreSpecies.reactive:
                 for molA in speciesA.molecule:
                     for molB in oldCoreSpecies.molecule:
-                        reactionList.extend(family.generateReactions(
+                        reactionList.extend(family.generateReactions_parallel(
                             [molA, molB], failsSpeciesConstraints=self.failsSpeciesConstraints))
                         molA.clearLabeledAtoms()
                         molB.clearLabeledAtoms()
@@ -726,6 +726,20 @@ class CoreEdgeReactionModel:
                                      .format(len(reactions_family), familyKeys[family_idx], family_idx))
                         for reaction_family in reactions_family:
                             reaction_family.family = families[familyKeys[family_idx]]
+                            templateLabels = reaction_family.template
+                            redirect_template = []
+                            for label in templateLabels:
+                                redirect_template.append(reaction_family.family.groups.entries[label])
+                            reaction_family.template = redirect_template
+
+                            # redirect template for reaction.reverse
+                            if hasattr(reaction_family, "reverse"):
+                                reverseReaction = reaction_family.reverse
+                                reverseTemplateLabels = reverseReaction.template
+                                redirect_reverseTemplate = []
+                                for label in reverseTemplateLabels:
+                                    redirect_reverseTemplate.append(reaction_family.family.groups.entries[label])
+                                reverseReaction.template = redirect_reverseTemplate
 
                         newReactions.extend(reactions_family)
 
