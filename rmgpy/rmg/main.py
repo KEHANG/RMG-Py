@@ -300,16 +300,17 @@ class RMG:
             for family in self.database.kinetics.families.values():
                 family.fillKineticsRulesByAveragingUp()
 
-        from scoop import shared
-        import rmgpy.data.rmg
-        # set shared constant
-        database = rmgpy.data.rmg.database
-        families = database.kinetics.families
-        logging.info("Sharing kinetics families....")
-        shared.setConst(database_kinetics_families = families) # families is a dictionary
-        logging.info("Sharing forbiddenStructures...")
-        shared.setConst(database_forbiddenStructures = database.forbiddenStructures)
-        logging.info("Done broadcasting.")
+        if self.parallelMode:
+            from scoop import shared
+            import rmgpy.data.rmg
+            # set shared constant
+            database = rmgpy.data.rmg.database
+            families = database.kinetics.families
+            logging.info("Sharing kinetics families....")
+            shared.setConst(database_kinetics_families = families) # families is a dictionary
+            logging.info("Sharing forbiddenStructures...")
+            shared.setConst(database_forbiddenStructures = database.forbiddenStructures)
+            logging.info("Done broadcasting.")
     
     def initialize(self, args):
         """
