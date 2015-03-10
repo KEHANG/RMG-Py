@@ -663,6 +663,27 @@ class CoreEdgeReactionModel:
                         molB.clearLabeledAtoms()
         return reactionList
 
+    def react_species(self, speciesA, corespecies):
+        """
+        Generate bimolecular reactions for one specific family
+        and species A is different than species B where B is one of old core species
+        :param family: in database.kinetics.families
+        :param speciesA: new core species
+        :return: a list of new reactions
+        """
+        from scoop import shared
+        reactionList = []
+        families = shared.getConst("database_kinetics_families")
+        for family in families:
+            if corespecies.reactive:
+                for molA in speciesA.molecule:
+                    for molB in corespecies.molecule:
+                        reactionList.extend(family.generateReactions_parallel(
+                            [molA, molB], failsSpeciesConstraints=self.failsSpeciesConstraints))
+                        molA.clearLabeledAtoms()
+                        molB.clearLabeledAtoms()
+        return reactionList
+
 
     def enlarge(self, newObject, parallelMode=False):
         """
@@ -719,39 +740,35 @@ class CoreEdgeReactionModel:
                                 newReactions.extend(self.react(database, newSpecies, coreSpecies))
                     else:
                         from scoop.futures import map
-                        # scoop parallelizes the loop of react_family
+                        # scoop parallelizes the loop of react_species
                         families = database.kinetics.families
-                        familyKeys = families.keys()
                         corespeciesList = self.core.species
+                        corespeciesNum = len(corespeciesList)
+                        react_species_task_results = list(map(self.react_species, [newSpecies]*corespeciesNum, corespeciesList))
 
-                        families_num = len(familyKeys)
-                        react_family_task_results = list(map(self.react_family, familyKeys,
-                                                             [newSpecies]*families_num, [corespeciesList]*families_num))
-                        for family_idx in range(families_num):
-                            reactions_family = react_family_task_results[family_idx]
-                            # logging.info("{0} reactions generated from this family {1} with index {2}"
-                            #              .format(len(reactions_family), familyKeys[family_idx], family_idx))
-                            for reaction_family in reactions_family:
+                        for species_idx in range(corespeciesNum):
+                            reactions = react_species_task_results[species_idx]
+                            for reaction in reactions:
                                 # redirect family to family objects in root-worker
-                                reaction_family.family = families[familyKeys[family_idx]]
+                                reaction.family = families[reaction.family]
                                 # redirect template to template objects in root-worker
-                                templateLabels = reaction_family.template
+                                templateLabels = reaction.template
                                 redirect_template = []
                                 for label in templateLabels:
-                                    redirect_template.append(reaction_family.family.groups.entries[label])
-                                reaction_family.template = redirect_template
+                                    redirect_template.append(reaction.family.groups.entries[label])
+                                reaction.template = redirect_template
 
                                 # redirect template for reaction.reverse
-                                if hasattr(reaction_family, "reverse"):
-                                    reverseReaction = reaction_family.reverse
+                                if hasattr(reaction, "reverse"):
+                                    reverseReaction = reaction.reverse
                                     reverseReaction.family = families[reverseReaction.family]
                                     reverseTemplateLabels = reverseReaction.template
                                     redirect_reverseTemplate = []
                                     for label in reverseTemplateLabels:
-                                        redirect_reverseTemplate.append(reaction_family.family.groups.entries[label])
+                                        redirect_reverseTemplate.append(reverseReaction.family.groups.entries[label])
                                     reverseReaction.template = redirect_reverseTemplate
 
-                            newReactions.extend(reactions_family)
+                            newReactions.extend(reactions)
                         gc.collect()
                     t_end = time.time()
                     logging.info("When parallelMode is set as {0}, the react time is {1}/s.".format(parallelMode, t_end-t_start))
