@@ -739,7 +739,9 @@ class CoreEdgeReactionModel:
                         logging.info("{0} reactions generated from this family {1} with index {2}"
                                      .format(len(reactions_family), familyKeys[family_idx], family_idx))
                         for reaction_family in reactions_family:
+                            # redirect family to family objects in root-worker
                             reaction_family.family = families[familyKeys[family_idx]]
+                            # redirect template to template objects in root-worker
                             templateLabels = reaction_family.template
                             redirect_template = []
                             for label in templateLabels:
@@ -749,6 +751,7 @@ class CoreEdgeReactionModel:
                             # redirect template for reaction.reverse
                             if hasattr(reaction_family, "reverse"):
                                 reverseReaction = reaction_family.reverse
+                                reverseReaction.family = families[reverseReaction.family]
                                 reverseTemplateLabels = reverseReaction.template
                                 redirect_reverseTemplate = []
                                 for label in reverseTemplateLabels:

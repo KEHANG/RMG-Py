@@ -1184,6 +1184,42 @@ class KineticsFamily(Database):
         
         return reaction
 
+    def __createReaction_parallel(self, reactants, products, isForward):
+        """
+        Create and return a new :class:`Reaction` object containing the
+        provided `reactants` and `products` as lists of :class:`Molecule`
+        objects.
+        """
+
+        # Make sure the products are in fact different than the reactants
+        if len(reactants) == len(products) == 1:
+            if reactants[0].isIsomorphic(products[0]):
+                return None
+        elif len(reactants) == len(products) == 2:
+            if reactants[0].isIsomorphic(products[0]) and reactants[1].isIsomorphic(products[1]):
+                return None
+            elif reactants[0].isIsomorphic(products[1]) and reactants[1].isIsomorphic(products[0]):
+                return None
+
+        # Create and return template reaction object
+        reaction = TemplateReaction(
+            reactants = reactants if isForward else products,
+            products = products if isForward else reactants,
+            degeneracy = 1,
+            reversible = True,
+            family = self.label,
+        )
+
+        # Store the labeled atoms so we can recover them later
+        # (e.g. for generating reaction pairs and templates)
+        labeledAtoms = []
+        for reactant in reaction.reactants:
+            for label, atom in reactant.getLabeledAtoms().items():
+                labeledAtoms.append((label, atom))
+        reaction.labeledAtoms = labeledAtoms
+
+        return reaction
+
     def __matchReactantToTemplate(self, reactant, templateReactant):
         """
         Return ``True`` if the provided reactant matches the provided
@@ -1577,7 +1613,7 @@ class KineticsFamily(Database):
                         pass
                     else:
                         if productStructures is not None:
-                            rxn = self.__createReaction(reactantStructures, productStructures, forward)
+                            rxn = self.__createReaction_parallel(reactantStructures, productStructures, forward)
                             if rxn: rxnList.append(rxn)
 
         # Bimolecular reactants: A + B --> products
@@ -1604,7 +1640,7 @@ class KineticsFamily(Database):
                                 pass
                             else:
                                 if productStructures is not None:
-                                    rxn = self.__createReaction(reactantStructures, productStructures, forward)
+                                    rxn = self.__createReaction_parallel(reactantStructures, productStructures, forward)
                                     if rxn: rxnList.append(rxn)
 
                     # Only check for swapped reactants if they are different
@@ -1624,7 +1660,7 @@ class KineticsFamily(Database):
                                     pass
                                 else:
                                     if productStructures is not None:
-                                        rxn = self.__createReaction(reactantStructures, productStructures, forward)
+                                        rxn = self.__createReaction_parallel(reactantStructures, productStructures, forward)
                                         if rxn: rxnList.append(rxn)
         # If products is given, remove reactions from the reaction list that
         # don't generate the given products
