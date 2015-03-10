@@ -36,6 +36,7 @@ import logging
 import math
 import numpy
 import itertools
+import gc
 
 from rmgpy.display import display
 #import rmgpy.chemkin
@@ -763,6 +764,7 @@ class CoreEdgeReactionModel:
                                     reverseReaction.template = redirect_reverseTemplate
 
                             newReactions.extend(reactions_family)
+                        gc.collect()
 
                     # Find reactions involving the new species as bimolecular reactants
                     # or products with itself (e.g. A + A <---> products)
