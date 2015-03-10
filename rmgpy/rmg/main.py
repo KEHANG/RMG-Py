@@ -153,6 +153,7 @@ class RMG:
         self.relativeTolerance = 1.0e-4
         self.maximumEdgeSpecies = 1000000
         self.termination = []
+        self.parallelMode = False
         
         self.done = False
         self.verbosity = logging.INFO
@@ -514,7 +515,7 @@ class RMG:
                 # These should be Species or Network objects
                 logging.info('')
                 objectsToEnlarge = list(set(objectsToEnlarge))
-                self.reactionModel.enlarge(objectsToEnlarge)
+                self.reactionModel.enlarge(objectsToEnlarge, self.parallelMode)
 
             self.saveEverything()
 

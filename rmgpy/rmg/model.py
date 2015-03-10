@@ -662,7 +662,7 @@ class CoreEdgeReactionModel:
         return reactionList
 
 
-    def enlarge(self, newObject):
+    def enlarge(self, newObject, parallelMode=False):
         """
         Enlarge a reaction model by processing the objects in the list `newObject`. 
         If `newObject` is a
@@ -672,7 +672,6 @@ class CoreEdgeReactionModel:
         is a :class:`rmg.unirxn.network.Network` object, then reactions are
         generated for the species in the network with the largest leak flux.
         """
-        from scoop.futures import map
         database = rmgpy.data.rmg.database
         
         if not isinstance(newObject, list):
@@ -711,40 +710,45 @@ class CoreEdgeReactionModel:
                     # generate all the reactions family by family which is helpful to parallelism
                     # for label, family in database.kinetics.families.iteritems():
                     #     newReactions.extend(self.react_family(family, newSpecies))
+                    if not parallelMode:
+                        for coreSpecies in self.core.species:
+                            if coreSpecies.reactive:
+                                newReactions.extend(self.react(database, newSpecies, coreSpecies))
+                    else:
+                        from scoop.futures import map
+                        # scoop parallelizes the loop of react_family
+                        families = database.kinetics.families
+                        familyKeys = families.keys()
+                        corespeciesList = self.core.species
 
-                    # scoop parallelizes the loop of react_family
-                    families = database.kinetics.families
-                    familyKeys = families.keys()
-                    corespeciesList = self.core.species
+                        families_num = len(familyKeys)
+                        react_family_task_results = list(map(self.react_family, familyKeys,
+                                                             [newSpecies]*families_num, [corespeciesList]*families_num))
+                        for family_idx in range(families_num):
+                            reactions_family = react_family_task_results[family_idx]
+                            logging.info("{0} reactions generated from this family {1} with index {2}"
+                                         .format(len(reactions_family), familyKeys[family_idx], family_idx))
+                            for reaction_family in reactions_family:
+                                # redirect family to family objects in root-worker
+                                reaction_family.family = families[familyKeys[family_idx]]
+                                # redirect template to template objects in root-worker
+                                templateLabels = reaction_family.template
+                                redirect_template = []
+                                for label in templateLabels:
+                                    redirect_template.append(reaction_family.family.groups.entries[label])
+                                reaction_family.template = redirect_template
 
-                    families_num = len(familyKeys)
-                    react_family_task_results = list(map(self.react_family, familyKeys,
-                                                         [newSpecies]*families_num, [corespeciesList]*families_num))
-                    for family_idx in range(families_num):
-                        reactions_family = react_family_task_results[family_idx]
-                        logging.info("{0} reactions generated from this family {1} with index {2}"
-                                     .format(len(reactions_family), familyKeys[family_idx], family_idx))
-                        for reaction_family in reactions_family:
-                            # redirect family to family objects in root-worker
-                            reaction_family.family = families[familyKeys[family_idx]]
-                            # redirect template to template objects in root-worker
-                            templateLabels = reaction_family.template
-                            redirect_template = []
-                            for label in templateLabels:
-                                redirect_template.append(reaction_family.family.groups.entries[label])
-                            reaction_family.template = redirect_template
+                                # redirect template for reaction.reverse
+                                if hasattr(reaction_family, "reverse"):
+                                    reverseReaction = reaction_family.reverse
+                                    reverseReaction.family = families[reverseReaction.family]
+                                    reverseTemplateLabels = reverseReaction.template
+                                    redirect_reverseTemplate = []
+                                    for label in reverseTemplateLabels:
+                                        redirect_reverseTemplate.append(reaction_family.family.groups.entries[label])
+                                    reverseReaction.template = redirect_reverseTemplate
 
-                            # redirect template for reaction.reverse
-                            if hasattr(reaction_family, "reverse"):
-                                reverseReaction = reaction_family.reverse
-                                reverseReaction.family = families[reverseReaction.family]
-                                reverseTemplateLabels = reverseReaction.template
-                                redirect_reverseTemplate = []
-                                for label in reverseTemplateLabels:
-                                    redirect_reverseTemplate.append(reaction_family.family.groups.entries[label])
-                                reverseReaction.template = redirect_reverseTemplate
-
-                        newReactions.extend(reactions_family)
+                            newReactions.extend(reactions_family)
 
                     # Find reactions involving the new species as bimolecular reactants
                     # or products with itself (e.g. A + A <---> products)
