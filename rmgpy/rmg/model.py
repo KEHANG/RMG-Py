@@ -688,7 +688,7 @@ class CoreEdgeReactionModel:
         from scoop import shared
         reactionList = []
         families = shared.getConst("database_kinetics_families")
-        for family in families:
+        for label, family in families.iteritems():
             if corespecies.reactive:
                 for molA in speciesA.molecule:
                     for molB in corespecies.molecule:
