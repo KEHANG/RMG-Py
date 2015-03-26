@@ -131,6 +131,65 @@ class TemplateReaction(Reaction):
         return self.family
 
 ################################################################################
+class TemplateReactionWithReverse(TemplateReaction):
+    """
+    A Reaction object generated from a reaction family template. In addition to
+    the usual attributes, this class includes a `family` attribute to store the
+    family that it was created from, as well as a `estimator` attribute to indicate
+    whether it came from a rate rules or a group additivity estimate.
+    """
+
+    def __init__(self,
+                index=-1,
+                reactants=None,
+                products=None,
+                kinetics=None,
+                reversible=True,
+                transitionState=None,
+                duplicate=False,
+                degeneracy=1,
+                pairs=None,
+                family=None,
+                template=None,
+                estimator=None,
+                reverse=None
+                ):
+        TemplateReaction.__init__(self,
+                          index=index,
+                          reactants=reactants,
+                          products=products,
+                          kinetics=kinetics,
+                          reversible=reversible,
+                          transitionState=transitionState,
+                          duplicate=duplicate,
+                          degeneracy=degeneracy,
+                          pairs=pairs,
+                          family=family,
+                          template=template,
+                          estimator=estimator
+                          )
+        self.reverse = reverse
+
+    def __reduce__(self):
+        """
+        A helper function used when pickling an object.
+        """
+        return (TemplateReactionWithReverse, (self.index,
+                                              self.reactants,
+                                              self.products,
+                                              self.kinetics,
+                                              self.reversible,
+                                              self.transitionState,
+                                              self.duplicate,
+                                              self.degeneracy,
+                                              self.pairs,
+                                              self.family,
+                                              self.template,
+                                              self.estimator,
+                                              self.reverse
+                                            ))
+
+################################################################################
 
 class ReactionRecipe:
     """
@@ -1202,13 +1261,22 @@ class KineticsFamily(Database):
                 return None
 
         # Create and return template reaction object
-        reaction = TemplateReaction(
-            reactants = reactants if isForward else products,
-            products = products if isForward else reactants,
-            degeneracy = 1,
-            reversible = True,
-            family = self.label,
-        )
+        if self.ownReverse:
+            reaction = TemplateReactionWithReverse(
+                reactants = reactants if isForward else products,
+                products = products if isForward else reactants,
+                degeneracy = 1,
+                reversible = True,
+                family = self.label,
+            )
+        else:
+            reaction = TemplateReaction(
+                reactants = reactants if isForward else products,
+                products = products if isForward else reactants,
+                degeneracy = 1,
+                reversible = True,
+                family = self.label,
+            )
 
         # Store the labeled atoms so we can recover them later
         # (e.g. for generating reaction pairs and templates)
