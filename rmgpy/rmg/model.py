@@ -60,6 +60,17 @@ from pdep import PDepReaction, PDepNetwork
 # generateThermoDataFromQM under the Species class imports the qm package
 
 
+from functools import wraps
+
+def timefn(fn):
+    @wraps(fn)
+    def measure_time(*args, **kwargs):
+        t1 = time.time()
+        result = fn(*args, **kwargs)
+        t2 = time.time()
+        print("@timefn:" + fn.func_name + " took " + str(t2 - t1) + " seconds")
+        return result
+    return measure_time
 
 ################################################################################
 
@@ -698,7 +709,7 @@ class CoreEdgeReactionModel:
                         molB.clearLabeledAtoms()
         return reactionList
 
-
+    @timefn
     def enlarge(self, newObject, parallelMode=False):
         """
         Enlarge a reaction model by processing the objects in the list `newObject`. 
@@ -837,7 +848,8 @@ class CoreEdgeReactionModel:
             
             newSpeciesList.extend(self.newSpeciesList)
             newReactionList.extend(self.newReactionList)
-            
+
+        t_start = time.time()
         # Generate thermodynamics of new species
         logging.info('Generating thermodynamics for new species...')
         for spec in newSpeciesList:
@@ -862,6 +874,8 @@ class CoreEdgeReactionModel:
                         reaction.template = reaction.reverse.template
                     # We're done with the "reverse" attribute, so delete it to save a bit of memory
                     delattr(reaction,'reverse')
+        t_end = time.time()
+        logging.info("Thermo and kinetics estimation time is {0}/s.".format(t_end-t_start))
                     
         # For new reactions, convert ArrheniusEP to Arrhenius, and fix barrier heights.
         # self.newReactionList only contains *actually* new reactions, all in the forward direction.
@@ -906,7 +920,7 @@ class CoreEdgeReactionModel:
         )
 
         logging.info('')
-
+    @timefn
     def processNewReactions(self, newReactions, newSpecies, pdepNetwork=None):
         """
         Process a list of newly-generated reactions involving the new core

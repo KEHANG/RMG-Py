@@ -57,6 +57,7 @@ from rmgpy.kinetics.diffusionLimited import diffusionLimiter
 
 from model import Species, CoreEdgeReactionModel
 from pdep import PDepNetwork
+from rmgpy.rmg.model import timefn
 
 ################################################################################
 
@@ -500,6 +501,7 @@ class RMG:
                     worksheet = None
                 
                 # Conduct simulation
+                t_start = time.time()
                 logging.info('Conducting simulation of reaction system %s...' % (index+1))
                 terminated, obj = reactionSystem.simulate(
                     coreSpecies = self.reactionModel.core.species,
@@ -516,6 +518,8 @@ class RMG:
                 )
                 allTerminated = allTerminated and terminated
                 logging.info('')
+                t_end = time.time()
+                logging.info("ODE solving time is {0}/s.".format(t_end-t_start))
                 
                 # If simulation is invalid, note which species should be added to
                 # the core
@@ -543,7 +547,7 @@ class RMG:
                 for objectToEnlarge in objectsToEnlarge:
                     self.reactionModel.enlarge(objectToEnlarge, self.parallelMode)
 
-            self.saveEverything()
+
 
             # Update RMG execution statistics
             logging.info('Updating RMG execution statistics...')
@@ -652,9 +656,9 @@ class RMG:
         coreSpec, coreReac, edgeSpec, edgeReac = self.reactionModel.getModelSize()
         logging.info('The final model core has %s species and %s reactions' % (coreSpec, coreReac))
         logging.info('The final model edge has %s species and %s reactions' % (edgeSpec, edgeReac))
-        
+        self.saveEverything()
         self.finish()
-        
+    @timefn
     def saveEverything(self):
         """
         Saves the output HTML, the Chemkin file, and the Restart file (if appropriate).
