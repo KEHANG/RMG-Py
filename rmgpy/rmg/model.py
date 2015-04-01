@@ -709,6 +709,28 @@ class CoreEdgeReactionModel:
                         molB.clearLabeledAtoms()
         return reactionList
 
+    def react_speciesList(self, speciesA, corespeciesList):
+        """
+        Generate bimolecular reactions for one specific family
+        and species A is different than species B where B is one of old core species
+        :param family: in database.kinetics.families
+        :param speciesA: new core species
+        :return: a list of new reactions
+        """
+        from scoop import shared
+        reactionList = []
+        families = shared.getConst("database_kinetics_families")
+        for corespecies in corespeciesList:
+            if corespecies.reactive:
+                for label, family in families.iteritems():
+                    for molA in speciesA.molecule:
+                        for molB in corespecies.molecule:
+                            reactionList.extend(family.generateReactions_parallel(
+                                [molA, molB], failsSpeciesConstraints=self.failsSpeciesConstraints))
+                            molA.clearLabeledAtoms()
+                            molB.clearLabeledAtoms()
+        return reactionList
+
     @timefn
     def enlarge(self, newObject, parallelMode=False, rootSpeciesDict={}):
         """
@@ -769,9 +791,10 @@ class CoreEdgeReactionModel:
                         families = database.kinetics.families
                         corespeciesList = self.core.species
                         corespeciesNum = len(corespeciesList)
-                        react_species_task_results = list(map(self.react_species, [newSpecies]*corespeciesNum, corespeciesList))
+                        react_species_task_results = list(map(self.react_speciesList, [newSpecies]*2,
+                                                              [corespeciesList[:corespeciesNum/2], corespeciesList[corespeciesNum/2:]]))
 
-                        for species_idx in range(corespeciesNum):
+                        for species_idx in range(2):
                             reactions = react_species_task_results[species_idx]
                             for reaction in reactions:
                                 # redirect family to family objects in root-worker
