@@ -1354,7 +1354,7 @@ class KineticsFamily(Database):
 
         return reactionList
 
-    def generateReactions_parallel(self, reactants, failsSpeciesConstraints=None):
+    def generateReactions_parallel(self, reactants, reactantIndices=None, failsSpeciesConstraints=None):
         """
         Generate all reactions between the provided list of one or two
         `reactants`, which should be either single :class:`Molecule` objects
@@ -1395,6 +1395,12 @@ class KineticsFamily(Database):
                 moleculeDict[molecule] = Species(molecule=[molecule])
             for molecule in reaction.products:
                 moleculeDict[molecule] = Species(molecule=[molecule])
+            # IDize
+            if reactantIndices != None:
+                reactantNum = len(reactantIndices)
+                for i in range(reactantNum):
+                    moleculeDict[reactants[i]] = reactantIndices[i]
+
             reaction.reactants = [moleculeDict[molecule] for molecule in reaction.reactants]
             reaction.products = [moleculeDict[molecule] for molecule in reaction.products]
             reaction.pairs = [(moleculeDict[reactant],moleculeDict[product]) for reactant, product in reaction.pairs]

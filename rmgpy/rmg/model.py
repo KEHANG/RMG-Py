@@ -704,13 +704,13 @@ class CoreEdgeReactionModel:
                 for molA in speciesA.molecule:
                     for molB in corespecies.molecule:
                         reactionList.extend(family.generateReactions_parallel(
-                            [molA, molB], failsSpeciesConstraints=self.failsSpeciesConstraints))
+                            [molA, molB], [speciesA.index, corespecies.index], failsSpeciesConstraints=self.failsSpeciesConstraints))
                         molA.clearLabeledAtoms()
                         molB.clearLabeledAtoms()
         return reactionList
 
     @timefn
-    def enlarge(self, newObject, parallelMode=False):
+    def enlarge(self, newObject, parallelMode=False, rootSpeciesDict={}):
         """
         Enlarge a reaction model by processing the objects in the list `newObject`. 
         If `newObject` is a
@@ -782,6 +782,28 @@ class CoreEdgeReactionModel:
                                 for label in templateLabels:
                                     redirect_template.append(reaction.family.groups.entries[label])
                                 reaction.template = redirect_template
+
+                                # de-IDize
+                                reactants = []
+                                products = []
+                                pairs = []
+                                for reactant, product in reaction.pairs:
+                                    if isinstance(reactant, int):
+                                        reactant = rootSpeciesDict[reactant]
+                                    if isinstance(product, int):
+                                        product = rootSpeciesDict[product]
+                                    pairs.append((reactant, product))
+                                for reactant in reaction.reactants:
+                                    if isinstance(reactant, int):
+                                        reactant = rootSpeciesDict[reactant]
+                                    reactants.append(reactant)
+                                for product in reaction.products:
+                                    if isinstance(product, int):
+                                        product = rootSpeciesDict[product]
+                                    products.append(product)
+                                reaction.pairs = pairs
+                                reaction.products = products
+                                reaction.reactants = reactants
 
                                 # redirect template for reaction.reverse
                                 if hasattr(reaction, "reverse"):
