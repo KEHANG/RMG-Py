@@ -462,6 +462,10 @@ class RMG:
 
         self.done = False
         self.saveEverything()
+        rootSpeciesDict={}
+        for corespecies in self.reactionModel.core.species:
+            if corespecies.reactive:
+                rootSpeciesDict[corespecies.index] = corespecies
         # Main RMG loop
         while not self.done:
                 
@@ -520,7 +524,7 @@ class RMG:
                 # These should be Species or Network objects
                 logging.info('')
                 objectsToEnlarge = list(set(objectsToEnlarge))
-                self.reactionModel.enlarge(objectsToEnlarge, self.parallelMode)
+                self.reactionModel.enlarge(objectsToEnlarge, self.parallelMode, rootSpeciesDict)
 
 
 
