@@ -726,7 +726,7 @@ class CoreEdgeReactionModel:
                     for molA in speciesA.molecule:
                         for molB in corespecies.molecule:
                             reactionList.extend(family.generateReactions_parallel(
-                                [molA, molB], failsSpeciesConstraints=self.failsSpeciesConstraints))
+                                [molA, molB], [speciesA.index, corespecies.index], failsSpeciesConstraints=self.failsSpeciesConstraints))
                             molA.clearLabeledAtoms()
                             molB.clearLabeledAtoms()
         return reactionList
