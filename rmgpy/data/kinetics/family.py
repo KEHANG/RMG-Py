@@ -1267,7 +1267,7 @@ class KineticsFamily(Database):
                 products = products if isForward else reactants,
                 degeneracy = 1,
                 reversible = True,
-                family = self.label,
+                family = self,
             )
         else:
             reaction = TemplateReaction(
@@ -1275,7 +1275,7 @@ class KineticsFamily(Database):
                 products = products if isForward else reactants,
                 degeneracy = 1,
                 reversible = True,
-                family = self.label,
+                family = self,
             )
 
         # Store the labeled atoms so we can recover them later
@@ -1396,10 +1396,10 @@ class KineticsFamily(Database):
             for molecule in reaction.products:
                 moleculeDict[molecule] = Species(molecule=[molecule])
             # IDize
-            if reactantIndices != None:
-                reactantNum = len(reactantIndices)
-                for i in range(reactantNum):
-                    moleculeDict[reactants[i]] = reactantIndices[i]
+            # if reactantIndices != None:
+            #     reactantNum = len(reactantIndices)
+            #     for i in range(reactantNum):
+            #         moleculeDict[reactants[i]] = reactantIndices[i]
 
             reaction.reactants = [moleculeDict[molecule] for molecule in reaction.reactants]
             reaction.products = [moleculeDict[molecule] for molecule in reaction.products]
@@ -1836,7 +1836,7 @@ class KineticsFamily(Database):
 
             # Generate metadata about the reaction that we will need later
             reaction.pairs = self.getReactionPairs(reaction)
-            reaction.template = self.getReactionTemplateLabels(reaction)
+            reaction.template = self.getReactionTemplate(reaction)
             if not forward:
                 reaction.degeneracy = self.calculateDegeneracy(reaction)
 

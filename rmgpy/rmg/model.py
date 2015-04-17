@@ -697,8 +697,11 @@ class CoreEdgeReactionModel:
         :return: a list of new reactions
         """
         from scoop import shared
+        import time
         reactionList = []
+        t0 = time.time()
         families = shared.getConst("database_kinetics_families")
+        t1 = time.time()
         if corespecies.reactive:
             for label, family in families.iteritems():
                 for molA in speciesA.molecule:
@@ -707,7 +710,10 @@ class CoreEdgeReactionModel:
                             [molA, molB], [speciesA.index, corespecies.index], failsSpeciesConstraints=self.failsSpeciesConstraints))
                         molA.clearLabeledAtoms()
                         molB.clearLabeledAtoms()
-        return reactionList
+        t2 = time.time()
+        t_getConst = t1 - t0
+        t_genRxn = t2 - t1
+        return (reactionList, t_getConst, t_genRxn)
 
     def react_speciesList(self, speciesA, corespeciesList):
         """
@@ -718,8 +724,11 @@ class CoreEdgeReactionModel:
         :return: a list of new reactions
         """
         from scoop import shared
+        import time
         reactionList = []
+        t0 = time.time()
         families = shared.getConst("database_kinetics_families")
+        t1 = time.time()
         for corespecies in corespeciesList:
             if corespecies.reactive:
                 for label, family in families.iteritems():
@@ -729,7 +738,10 @@ class CoreEdgeReactionModel:
                                 [molA, molB], [speciesA.index, corespecies.index], failsSpeciesConstraints=self.failsSpeciesConstraints))
                             molA.clearLabeledAtoms()
                             molB.clearLabeledAtoms()
-        return reactionList
+        t2 = time.time()
+        t_getConst = t1 - t0
+        t_genRxn = t2 - t1
+        return (reactionList, t_getConst, t_genRxn)
 
     @timefn
     def enlarge(self, newObject, parallelMode=False, rootSpeciesDict={}):
@@ -791,6 +803,7 @@ class CoreEdgeReactionModel:
                         families = database.kinetics.families
                         corespeciesList = self.core.species
                         corespeciesNum = len(corespeciesList)
+                        rootSpeciesDict[newSpecies.index] = newSpecies
                         react_species_task_results = list(map(self.react_speciesList, [newSpecies]*2,
                                                               [corespeciesList[:corespeciesNum/2], corespeciesList[corespeciesNum/2:]]))
 
