@@ -83,7 +83,7 @@ if __name__ == '__main__':
         ## spawning tasks
         corespeciesList = oldCoreSpeciesList
         corespeciesNum = len(corespeciesList)
-        taskNum = 8
+        taskNum =48
         corespeciesList_list = []
         for i in range(taskNum):
             corespeciesList_list.append(corespeciesList[corespeciesNum*i/taskNum:corespeciesNum*(i+1)/taskNum])
@@ -106,47 +106,47 @@ if __name__ == '__main__':
 
                 ### redirect family to family objects in root-worker
                 ### print "Redirecting family and template for reactions..."
-                reaction.family = families[reaction.family.label]
+                reaction.family = families[reaction.family]
 
                 ### redirect template to template objects in root-worker
                 templateLabels = reaction.template
                 redirect_template = []
                 for label in templateLabels:
-                    redirect_template.append(reaction.family.groups.entries[label.label])
+                    redirect_template.append(reaction.family.groups.entries[label])
                 reaction.template = redirect_template
 
                 ### de-IDize for species: convert ID into objects
                 # print "De-IDizing for species in reactions..."
-                # reactants = []
-                # products = []
-                # pairs = []
-                # for reactant, product in reaction.pairs:
-                #     if isinstance(reactant, int):
-                #         reactant = rootSpeciesDict[reactant]
-                #     if isinstance(product, int):
-                #         product = rootSpeciesDict[product]
-                #     pairs.append((reactant, product))
-                # for reactant in reaction.reactants:
-                #     if isinstance(reactant, int):
-                #         reactant = rootSpeciesDict[reactant]
-                #     reactants.append(reactant)
-                # for product in reaction.products:
-                #     if isinstance(product, int):
-                #         product = rootSpeciesDict[product]
-                #     products.append(product)
-                # reaction.pairs = pairs
-                # reaction.products = products
-                # reaction.reactants = reactants
+                reactants = []
+                products = []
+                pairs = []
+                for reactant, product in reaction.pairs:
+                    if isinstance(reactant, int):
+                        reactant = rootSpeciesDict[reactant]
+                    if isinstance(product, int):
+                        product = rootSpeciesDict[product]
+                    pairs.append((reactant, product))
+                for reactant in reaction.reactants:
+                    if isinstance(reactant, int):
+                        reactant = rootSpeciesDict[reactant]
+                    reactants.append(reactant)
+                for product in reaction.products:
+                    if isinstance(product, int):
+                        product = rootSpeciesDict[product]
+                    products.append(product)
+                reaction.pairs = pairs
+                reaction.products = products
+                reaction.reactants = reactants
 
                 ### redirect template for reaction.reverse
                 # print "Redirecting family and template for reaction.reverse..."
                 if hasattr(reaction, "reverse"):
                     reverseReaction = reaction.reverse
-                    reverseReaction.family = families[reverseReaction.family.label]
+                    reverseReaction.family = families[reverseReaction.family]
                     reverseTemplateLabels = reverseReaction.template
                     redirect_reverseTemplate = []
                     for label in reverseTemplateLabels:
-                        redirect_reverseTemplate.append(reverseReaction.family.groups.entries[label.label])
+                        redirect_reverseTemplate.append(reverseReaction.family.groups.entries[label])
                     reverseReaction.template = redirect_reverseTemplate
 
             newReactions.extend(reactions)
