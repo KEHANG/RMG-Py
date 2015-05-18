@@ -56,6 +56,7 @@ if __name__ == '__main__':
     # implement react method for newSpecies and oldCoreSpeciesList
     parallelMode = (sys.argv[1]=='parallel')
     newReactions = []
+    entryStr = ''
 
     ## choose serial mode
     if not parallelMode:
@@ -67,7 +68,6 @@ if __name__ == '__main__':
         from scoop import shared
         import gc
 
-        print("case1!!")
         ## broadcast database and forbiddenstructures
         families = rmg.database.kinetics.families
         print("Sharing kinetics families....")
@@ -81,18 +81,19 @@ if __name__ == '__main__':
 
 
         ## spawning tasks
+        caseNum = 3
         corespeciesList = oldCoreSpeciesList
         corespeciesNum = len(corespeciesList)
-        taskNum =48
+        workerNum = int(sys.argv[3])
+        taskNum = workerNum
         corespeciesList_list = []
         for i in range(taskNum):
             corespeciesList_list.append(corespeciesList[corespeciesNum*i/taskNum:corespeciesNum*(i+1)/taskNum])
-        t_react_0 = time.time()
+        t_SCOOP_0 = time.time()
         react_species_task_results = list(map(rmg.reactionModel.react_speciesList, [newSpecies]*taskNum,
                                               corespeciesList_list))
-        a = react_species_task_results[taskNum-1][1]
-        t_react_1 = time.time()
-        t_react = t_react_1 - t_react_0
+        t_SCOOP_1 = time.time()
+        t_SCOOP = t_SCOOP_1 - t_SCOOP_0
 
         ## processing the returned reactions by redirecting three main attributes:
         ## species, family, template
@@ -153,8 +154,13 @@ if __name__ == '__main__':
         gc.collect()
 
         # output time profile for parallel mode
-        time_profile_parallel = {"parallelMode": parallelMode, "t_setConst/sec": t_setConst, "t_react": t_react,
-                                 "t_getConst/sec": t_getConst, "t_genRxn": t_genRxn}
+        entry = (caseNum, workerNum, t_setConst, t_SCOOP)
+        for item in entry:
+            entryStr += str(item)
+            entryStr += '\t'
+        time_profile_parallel = {"parallelMode": parallelMode, "t_setConst/sec": t_setConst, "t_SCOOP/sec": t_SCOOP,
+                                 "t_getConst/sec": t_getConst, "t_genRxn/sec": t_genRxn, "max t_getConst/sec": max(t_getConst),
+                                 "max t_genRxn/sec": max(t_genRxn)}
         with open("time_profile_parallel.json", 'a') as timeProfileFile:
             json.dump(time_profile_parallel, timeProfileFile)
             timeProfileFile.write('\n')
@@ -164,6 +170,12 @@ if __name__ == '__main__':
     print "When parallelMode is set as {0}, the react time is {1}/s.".format(parallelMode, t2-t1)
     print "{0} reactions have been generated!".format(len(newReactions))
 
+    # write parallel time profiling data
+    if parallelMode:
+        entryStr += str(t2-t1)
+        entryStr += '\n'
+    with open("time_profile_parallel.dat", 'a') as timeProfileFile:
+            timeProfileFile.write(entryStr)
     # output time into times.json
     output_time = {"parallelMode": parallelMode, "time/sec": t2-t1, "rxns number":len(newReactions)}
     with open("times.json", 'a') as outputFile:
