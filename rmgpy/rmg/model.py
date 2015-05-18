@@ -39,6 +39,7 @@ import os.path
 import itertools
 import gc
 import time
+from scoop import shared
 
 from rmgpy.display import display
 #import rmgpy.chemkin
@@ -661,7 +662,6 @@ class CoreEdgeReactionModel:
         :param speciesA: new core species
         :return: a list of new reactions
         """
-        from scoop import shared
         reactionList = []
         family = shared.getConst("database_kinetics_families")[familyKey]
         for oldCoreSpecies in corespeciesList:
@@ -674,6 +674,10 @@ class CoreEdgeReactionModel:
                         molB.clearLabeledAtoms()
         return reactionList
 
+    def react_speciesListEmpty(self, speciesA, corespeciesList):
+
+        return '1'
+
     def react_species(self, speciesA, corespecies):
         """
         Generate bimolecular reactions for one specific family
@@ -682,8 +686,6 @@ class CoreEdgeReactionModel:
         :param speciesA: new core species
         :return: a list of new reactions
         """
-        from scoop import shared
-        import time
         reactionList = []
         t0 = time.time()
         families = shared.getConst("database_kinetics_families")
@@ -709,8 +711,6 @@ class CoreEdgeReactionModel:
         :param speciesA: new core species
         :return: a list of new reactions
         """
-        from scoop import shared
-        import time
         reactionList = []
         t0 = time.time()
         families = shared.getConst("database_kinetics_families")
@@ -790,10 +790,13 @@ class CoreEdgeReactionModel:
                         corespeciesList = self.core.species
                         corespeciesNum = len(corespeciesList)
                         rootSpeciesDict[newSpecies.index] = newSpecies
-                        react_species_task_results = list(map(self.react_speciesList, [newSpecies]*2,
-                                                              [corespeciesList[:corespeciesNum/2], corespeciesList[corespeciesNum/2:]]))
 
-                        for species_idx in range(2):
+                        # t_react recording
+                        t_SCOOP_0 = time.time()
+                        react_species_task_results = list(map(self.react_species, [newSpecies]*corespeciesNum, corespeciesList))
+                        t_SCOOP_1 = time.time()
+
+                        for species_idx in range(corespeciesNum):
                             reactions = react_species_task_results[species_idx]
                             for reaction in reactions:
                                 # redirect family to family objects in root-worker
@@ -839,8 +842,11 @@ class CoreEdgeReactionModel:
 
                             newReactions.extend(reactions)
                         gc.collect()
+                        t_redirect_1 = time.time()
+                        logging.info("When parallelMode is set as {0}, t_react is {1}/s.".format(parallelMode, t_SCOOP_1-t_SCOOP_0))
+                        logging.info("When parallelMode is set as {0}, t_redirection is {1}/s.".format(parallelMode, t_redirect_1-t_SCOOP_1))
                     t_end = time.time()
-                    logging.info("When parallelMode is set as {0}, the react time is {1}/s.".format(parallelMode, t_end-t_start))
+                    logging.info("When parallelMode is set as {0}, t_parallel_react is {1}/s.".format(parallelMode, t_end-t_start))
 
                     # Find reactions involving the new species as bimolecular reactants
                     # or products with itself (e.g. A + A <---> products)
