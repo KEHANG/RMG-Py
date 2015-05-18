@@ -84,6 +84,7 @@ def parseCommandLineArguments():
     parser.add_argument('-t', '--walltime', type=str, nargs=1, default='0',
         metavar='HH:MM:SS', help='set the maximum execution time')
 
+    parser.add_argument('-pl', '--parallel', action='store_true', help='run RMG in parallel mode')
     return parser.parse_args()
 
 ################################################################################
@@ -144,4 +145,6 @@ if __name__ == '__main__':
         
     else:
         rmg = RMG()
+        if args.parallel:
+            rmg.parallelMode = True
         rmg.execute(args)

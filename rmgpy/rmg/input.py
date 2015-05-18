@@ -193,7 +193,7 @@ def solvation(solvent):
         raise InputError("solvent should be a string like 'water'")
     rmg.solvent = solvent
 
-def model(toleranceMoveToCore=None, toleranceKeepInEdge=0.0, toleranceInterruptSimulation=1.0, maximumEdgeSpecies=None, parallelMode=False):
+def model(toleranceMoveToCore=None, toleranceKeepInEdge=0.0, toleranceInterruptSimulation=1.0, maximumEdgeSpecies=None):
     """
     How to generate the model. `toleranceMoveToCore` must be specified. Other parameters are optional and control the pruning.
     """
@@ -206,7 +206,6 @@ def model(toleranceMoveToCore=None, toleranceKeepInEdge=0.0, toleranceInterruptS
     rmg.fluxToleranceMoveToCore = toleranceMoveToCore
     rmg.fluxToleranceInterrupt = toleranceInterruptSimulation
     rmg.maximumEdgeSpecies = maximumEdgeSpecies
-    rmg.parallelMode = parallelMode
 
 def quantumMechanics(
                     software,
