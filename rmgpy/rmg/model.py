@@ -743,6 +743,49 @@ class CoreEdgeReactionModel:
         t_genRxn = t2 - t1
         return (reactionList, t_getConst, t_genRxn)
 
+    def reactionAttributesRedirection(self, reactions, rootSpeciesDict):
+        families = rmgpy.data.rmg.database.kinetics.families
+        for reaction in reactions:
+            # redirect family to family objects in root-worker
+            reaction.family = families[reaction.family]
+            # redirect template to template objects in root-worker
+            templateLabels = reaction.template
+            redirect_template = []
+            for label in templateLabels:
+                redirect_template.append(reaction.family.groups.entries[label])
+            reaction.template = redirect_template
+            # redirect family and template for reaction.reverse
+            if hasattr(reaction, "reverse"):
+                reverseReaction = reaction.reverse
+                reverseReaction.family = families[reverseReaction.family]
+                reverseTemplateLabels = reverseReaction.template
+                redirect_reverseTemplate = []
+                for label in reverseTemplateLabels:
+                    redirect_reverseTemplate.append(reverseReaction.family.groups.entries[label])
+                reverseReaction.template = redirect_reverseTemplate
+
+            # de-IDize for species existing in root
+            reactants = []
+            products = []
+            pairs = []
+            for reactant, product in reaction.pairs:
+                if isinstance(reactant, int):
+                    reactant = rootSpeciesDict[reactant]
+                if isinstance(product, int):
+                    product = rootSpeciesDict[product]
+                pairs.append((reactant, product))
+            for reactant in reaction.reactants:
+                if isinstance(reactant, int):
+                    reactant = rootSpeciesDict[reactant]
+                reactants.append(reactant)
+            for product in reaction.products:
+                if isinstance(product, int):
+                    product = rootSpeciesDict[product]
+                products.append(product)
+            reaction.pairs = pairs
+            reaction.products = products
+            reaction.reactants = reactants
+
     @timefn
     def enlarge(self, newObject, parallelMode=False, rootSpeciesDict={}):
         """
@@ -812,47 +855,7 @@ class CoreEdgeReactionModel:
 
                         for species_idx in range(corespeciesNum):
                             reactions = react_species_task_results[species_idx]
-                            for reaction in reactions:
-                                # redirect family to family objects in root-worker
-                                reaction.family = families[reaction.family]
-                                # redirect template to template objects in root-worker
-                                templateLabels = reaction.template
-                                redirect_template = []
-                                for label in templateLabels:
-                                    redirect_template.append(reaction.family.groups.entries[label])
-                                reaction.template = redirect_template
-
-                                # de-IDize
-                                reactants = []
-                                products = []
-                                pairs = []
-                                for reactant, product in reaction.pairs:
-                                    if isinstance(reactant, int):
-                                        reactant = rootSpeciesDict[reactant]
-                                    if isinstance(product, int):
-                                        product = rootSpeciesDict[product]
-                                    pairs.append((reactant, product))
-                                for reactant in reaction.reactants:
-                                    if isinstance(reactant, int):
-                                        reactant = rootSpeciesDict[reactant]
-                                    reactants.append(reactant)
-                                for product in reaction.products:
-                                    if isinstance(product, int):
-                                        product = rootSpeciesDict[product]
-                                    products.append(product)
-                                reaction.pairs = pairs
-                                reaction.products = products
-                                reaction.reactants = reactants
-
-                                # redirect template for reaction.reverse
-                                if hasattr(reaction, "reverse"):
-                                    reverseReaction = reaction.reverse
-                                    reverseReaction.family = families[reverseReaction.family]
-                                    reverseTemplateLabels = reverseReaction.template
-                                    redirect_reverseTemplate = []
-                                    for label in reverseTemplateLabels:
-                                        redirect_reverseTemplate.append(reverseReaction.family.groups.entries[label])
-                                    reverseReaction.template = redirect_reverseTemplate
+                            self.reactionAttributesRedirection(reactions, rootSpeciesDict)
 
                             newReactions.extend(reactions)
                         gc.collect()
