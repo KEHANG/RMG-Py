@@ -53,7 +53,7 @@ from rmgpy.data.kinetics.family import KineticsFamily, TemplateReaction
 from rmgpy.data.kinetics.library import KineticsLibrary, LibraryReaction
 from rmgpy.kinetics import KineticsData
 import rmgpy.data.rmg
-
+import rmgpy.thermo.thermoengine                        
 
 from pdep import PDepReaction, PDepNetwork
 # generateThermoDataFromQM under the Species class imports the qm package
@@ -107,8 +107,7 @@ class Species(rmgpy.species.Species):
             alpha0 = (300*0.011962,"kJ/mol"),
             T0 = (300,"K"),
             n = 0.85,
-        )
-
+        ) 
 ################################################################################
 
 class ReactionModel:
@@ -321,7 +320,13 @@ class CoreEdgeReactionModel:
         spec.coreSizeAtCreation = len(self.core.species)
         spec.generateResonanceIsomers()
         spec.molecularWeight = Quantity(spec.molecule[0].getMolecularWeight()*1000.,"amu")
-        # spec.generateTransportData(database)
+        
+        
+        thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
+        assert thermo_engine is not None
+
+        thermo_engine.submit(spec.getAugmentedInChI())
+
         spec.generateEnergyTransferModel()
         formula = molecule.getFormula()
         if formula in self.speciesDict:
@@ -642,11 +647,6 @@ class CoreEdgeReactionModel:
             newSpeciesList.extend(self.newSpeciesList)
             newReactionList.extend(self.newReactionList)
             
-        # Generate thermodynamics of new species
-        logging.info('Generating thermodynamics for new species...')
-        for spec in newSpeciesList:
-            spec.generateThermoData(database, quantumMechanics=self.quantumMechanics)
-            spec.generateTransportData(database)
         
         # Generate kinetics of new reactions
         logging.info('Generating kinetics for new reactions...')
@@ -1259,9 +1259,14 @@ class CoreEdgeReactionModel:
                 else:
                     raise ForbiddenStructureException("Species constraints forbids species {0} from seed mechanism {1}. Please reformulate constraints, remove the species, or explicitly allow it.".format(spec.label, seedMechanism.label))
 
+        
+        thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
+        assert thermo_engine is not None
+
         for spec in self.newSpeciesList:            
-            if spec.reactive: spec.generateThermoData(database, quantumMechanics=self.quantumMechanics)
-            spec.generateTransportData(database)
+            if spec.reactive:
+                thermo_engine.submit(spec.getAugmentedInChI())
+
             self.addSpeciesToCore(spec)
 
         for rxn in self.newReactionList:
@@ -1270,8 +1275,7 @@ class CoreEdgeReactionModel:
                 # we need to make sure the barrier is positive.
                 # ...but are Seed Mechanisms run through PDep? Perhaps not.
                 for spec in itertools.chain(rxn.reactants, rxn.products):
-                    if spec.thermo is None:
-                        spec.generateThermoData(database, quantumMechanics=self.quantumMechanics)
+                    thermo_engine.submit(spec.getAugmentedInChI())
                 rxn.fixBarrierHeight(forcePositive=True)
             self.addReactionToCore(rxn)
         
@@ -1322,9 +1326,13 @@ class CoreEdgeReactionModel:
                 else:
                     raise ForbiddenStructureException("Species constraints forbids species {0} from reaction library {1}. Please reformulate constraints, remove the species, or explicitly allow it.".format(spec.label, reactionLibrary.label))
        
+        
+        thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
+        assert thermo_engine is not None
+
         for spec in self.newSpeciesList:
-            if spec.reactive: spec.generateThermoData(database, quantumMechanics=self.quantumMechanics)
-            spec.generateTransportData(database)
+            if spec.reactive: 
+                thermo_engine.submit(spec.getAugmentedInChI())
             self.addSpeciesToEdge(spec)
 
         for rxn in self.newReactionList:

@@ -436,9 +436,12 @@ class RMG:
                         If you actually want to use the singlet state, set the allowSingletO2=True inside of the Species Constraints block in your input file.
                         """.format(spec.label))
                         
+            import rmgpy.thermo.thermoengine                        
+            thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
+            assert thermo_engine is not None
+
             for spec in self.initialSpecies:
-                spec.generateThermoData(self.database, quantumMechanics=self.quantumMechanics)
-                spec.generateTransportData(self.database)
+                thermo_engine.submit(spec.getAugmentedInChI())
                 
             # Add nonreactive species (e.g. bath gases) to core first
             # This is necessary so that the PDep algorithm can identify the bath gas            
