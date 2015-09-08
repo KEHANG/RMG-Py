@@ -193,6 +193,12 @@ class ThermoEngine(AbstractEngine):
         data = evaluator(identifier)
         return data
 
+    def get_thermo(self, identifier):
+        return self.get_data(identifier)[0]
+
+    def get_transport(self, identifier):
+        return self.get_data(identifier)[1]
+
 class LiquidModel(object):
     """docstring for LiquidModel"""
     solventName = None
