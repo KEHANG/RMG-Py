@@ -1645,6 +1645,9 @@ class EdgeSpecies(object):
         """
         return '{0}({1:d}), {2}'.format(self.label, self.index, self.aug_inchi)
 
+    def getAugmentedInChI(self):
+        return self.aug_inchi
+
     def generate_aug_inchi(self, spc):
         candidates = []
         spc.generateResonanceIsomers()
