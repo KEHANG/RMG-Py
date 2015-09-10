@@ -233,7 +233,10 @@ class CoreEdgeReactionModel:
         self.networkDict = {}
         self.networkList = []
         self.networkCount = 0
-        self.speciesDict = {}
+    
+        self.core_spc_dict = {} # "A" dictionary key = aug. inchi, value = rmgpy.rmg.model.Species
+        self.inchi_spc_dict = {} # "B" dictionary key = aug. inchi, value = rmgpy.rmg.model.InChISpecies
+
         self.reactionDict = {}
         self.speciesCache = [None for i in range(4)]
         self.speciesCounter = 0
@@ -279,12 +282,58 @@ class CoreEdgeReactionModel:
         # At this point we can conclude that the structure does not exist
         return False, None
 
+    def makeNewInChISpecies(self, spec):
+        """
+        Formally creates a new InChISpecies object from the parameter species, 
+        which can only be a Species object.
+        """
+        assert isinstance(spec, rmgpy.species.Species)
+
+
+        if spec.getAugmentedInChI() in self.inchi_spc_dict:
+            return self.inchi_spc_dict[spec.getAugmentedInChI()]
+
+        molecule = spec.molecule[0]
+        molecule.clearLabeledAtoms()
+        speciesIndex = spec.index
+        label = spec.label if spec.label != '' else ''
+        reactive = spec.reactive
+
+        # If we're here then we're ready to make the new species
+        if label == '': 
+            # Use SMILES as default format for label
+            # However, SMILES can contain slashes (to describe the
+            # stereochemistry around double bonds); since RMG doesn't 
+            # distinguish cis and trans isomers, we'll just strip these out
+            # so that we can use the label in file paths
+            label = molecule.toSMILES().replace('/','').replace('\\','')
+        logging.debug('Creating new InChI Species {0}'.format(label))
+        if reactive and speciesIndex == -1:
+            self.speciesCounter += 1   # count only reactive species
+            speciesIndex = self.speciesCounter
+
+        model_spc = Species(index=speciesIndex, label=label, molecule=[molecule], reactive=reactive)
+        model_spc.coreSizeAtCreation = len(self.core.species)
+
+        self.updateCoreSizeAtCreation(model_spc)
+
+        thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
+        assert thermo_engine is not None
+        thermo_engine.submit(model_spc.getAugmentedInChI())
+
+        inchi_spc = InChISpecies(model_spc)
+        self.inchi_spc_dict[aug_inchi] = inchi_spc
+
+        return inchi_spc
+
     def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True, submit=True):
         """
         Formally create a new species from the specified `object`, which can be
         either a :class:`Molecule` object or an :class:`rmgpy.species.Species`
         object.
         """
+
+        # TODO do we allow both Molecule and Species objects here?
         if isinstance(object, rmgpy.species.Species):
             molecule = object.molecule[0]
             label = label if label != '' else object.label
@@ -328,11 +377,8 @@ class CoreEdgeReactionModel:
             thermo_engine.submit(spec.getAugmentedInChI())
 
         spec.generateEnergyTransferModel()
-        formula = molecule.getFormula()
-        if formula in self.speciesDict:
-            self.speciesDict[formula].append(spec)
-        else:
-            self.speciesDict[formula] = [spec]
+
+        self.inchi_spc_dict[spec.getAugmentedInChI()] = InChISpecies(spec)
 
 
         # Since the species is new, add it to the list of new species
@@ -435,9 +481,42 @@ class CoreEdgeReactionModel:
         The forward reaction is appended to self.newReactionList if it is new.
         """
 
-        # Determine the proper species objects for all reactants and products
-        reactants = [self.makeNewSpecies(reactant)[0] for reactant in forward.reactants]
-        products  = [self.makeNewSpecies(product)[0]  for product  in forward.products ]
+        # TODO Can we store the nature of the reaction (core/edge) already here? Maybe as an attribute
+
+        allinCore = True
+        for spc in itertools.chain(forward.reactants, forward.products):
+            if not spc.getAugmentedInChI() in self.core_spc_dict:
+                allinCore = False
+                break
+
+        reactants, products = [], []
+
+        if allinCore:
+            # redirect references of reactants / products
+            for spc in forward.reactants:
+                spc = self.core_spc_dict[spc.getAugmentedInChI()]
+                reactants.append(spc)
+
+            for spc in forward.products:
+                spc = self.core_spc_dict[spc.getAugmentedInChI()]
+                products.append(spc)
+
+        else:# at least one species is not found in the core
+            # convert all species to InChISpecies:
+
+            for spc in forward.reactants:
+                if spc.getAugmentedInChI() in self.core_spc_dict:
+                    spc = self.core_spc_dict[spc.getAugmentedInChI()]
+                spc = self.makeNewInChISpecies(spc)
+                reactants.append(spc)
+
+            for spc in forward.products:
+                if spc.getAugmentedInChI() in self.core_spc_dict:
+                    spc = self.core_spc_dict[spc.getAugmentedInChI()]
+                spc = self.makeNewInChISpecies(spc)
+                products.append(spc)
+
+
         if forward.pairs is not None:
             for pairIndex in range(len(forward.pairs)):
                 reactantIndex = forward.reactants.index(forward.pairs[pairIndex][0])
@@ -445,9 +524,11 @@ class CoreEdgeReactionModel:
                 forward.pairs[pairIndex] = (reactants[reactantIndex], products[productIndex])
                 if hasattr(forward, 'reverse'):
                     forward.reverse.pairs[pairIndex] = (products[productIndex], reactants[reactantIndex])
+        
         forward.reactants = reactants
         forward.products  = products
 
+        # TODO do this later
         if checkExisting:
             found, rxn = self.checkForExistingReaction(forward)
             if found: return rxn, False
@@ -470,6 +551,9 @@ class CoreEdgeReactionModel:
         
         # Add to the global dict/list of existing reactions (a list broken down by family, r1, r2)
         # identify r1 and r2
+
+        # TODO reactants will be different types (Species, InChISpecies) depending on whether the reaction is part of core/edge
+
         r1 = forward.reactants[0]
         r2 = None if len(forward.reactants) == 1 else forward.reactants[1]
         family = forward.family
@@ -726,30 +810,22 @@ class CoreEdgeReactionModel:
                 allSpeciesInCore = True
                 # Add the reactant and product species to the edge if necessary
                 # At the same time, check if all reactants and products are in the core
-                for spec in rxn.reactants:
-                    if spec not in self.core.species:
+                for spec in itertools.chain(rxn.reactants, rxn.products):
+                    if spec.getAugmentedInChI() not in self.core_spc_dict:
                         allSpeciesInCore = False
-                        edge_spec = InChISpecies(spec)
+                        edge_spec = None
+                        try:
+                            edge_spec = self.inchi_spc_dict[spec.getAugmentedInChI()]
+                        except KeyError, e:
+                            loggging.error('Could not find this species in inchi species dictionary.')
+                            raise e
                         
                         found = False
                         for spc in self.edge.species:
-                            if spc.aug_inchi == edge_spec.aug_inchi:
+                            if spc.getAugmentedInChI() == edge_spec.getAugmentedInChI():
                                 found = True
                                 break
                         
-                        if not found:
-                            self.addSpeciesToEdge(edge_spec)
-                for spec in rxn.products:
-                    if spec not in self.core.species:
-                        allSpeciesInCore = False
-                        edge_spec = InChISpecies(spec)
-                        
-                        found = False
-                        for spc in self.edge.species:
-                            if spc.aug_inchi == edge_spec.aug_inchi:
-                                found = True
-                                break
-
                         if not found:
                             self.addSpeciesToEdge(edge_spec)
             
@@ -951,6 +1027,9 @@ class CoreEdgeReactionModel:
 
         assert spec not in self.core.species, "Tried to add species {0} to core, but it's already there".format(spec.label)
 
+        assert isinstance(spec, Species), "Not the right type! {}"
+        self.core_spc_dict[spec.getAugmentedInChI()] = spec
+
         rxnList = []
 
 
@@ -958,22 +1037,23 @@ class CoreEdgeReactionModel:
         self.core.species.append(spec)
         
         # convert spec to edge species and move reactions from core to edge:
-        aug_inchi = InChISpecies(spec).aug_inchi
+        aug_inchi = spec.getAugmentedInChI()
 
         for spc in self.edge.species:
-            if spc.aug_inchi == aug_inchi:
+            if spc.getAugmentedInChI() == aug_inchi:
                 # If species was in edge, remove it
                 logging.debug("Removing species {0} from edge.".format(spec))
                 self.edge.species.remove(spc)
 
                 # Search edge for reactions that now contain only core species;
                 # these belong in the model core and will be moved there
+
                 for rxn in self.edge.reactions:
                     allCore = True
                     for reactant in rxn.reactants:
-                        if reactant not in self.core.species: allCore = False
+                        if reactant.getAugmentedInChI() not in self.core_spc_dict: allCore = False
                     for product in rxn.products:
-                        if product not in self.core.species: allCore = False
+                        if product.getAugmentedInChI() not in self.core_spc_dict: allCore = False
                     if allCore: rxnList.append(rxn)
 
                 # Move any identified reactions to the core
@@ -995,7 +1075,14 @@ class CoreEdgeReactionModel:
             return
 
         assert isinstance(spec, Species)
-        edge_spc = InChISpecies(spec)
+
+        edge_spec = None
+        try:
+            edge_spec = self.inchi_spc_dict[spec.getAugmentedInChI()]
+        except KeyError, e:
+            loggging.error('Could not find this species in inchi species dictionary.')
+            raise e
+
         self.edge.species.append(edge_spec)
         
 
@@ -1149,7 +1236,7 @@ class CoreEdgeReactionModel:
 
         # remove from the global list of species, to free memory
         formula = spec.molecule[0].getFormula()
-        self.speciesDict[formula].remove(spec)
+        del self.inchi_spc_dict[spec.getAugmentedInChI())]
         if spec in self.speciesCache:
             self.speciesCache.remove(spec)
             self.speciesCache.append(None)
@@ -1161,6 +1248,19 @@ class CoreEdgeReactionModel:
         ensure it is supposed to be a core reaction (i.e. all of its reactants
         AND all of its products are in the list of core species).
         """
+
+        reactants, products = [], []
+        for spc in rxn.reactants:
+            spc = self.core_spc_dict[spc.getAugmentedInChI()]
+            reactants.append(spc)
+
+        for spc in rxn.products:
+            spc = self.core_spc_dict[spc.getAugmentedInChI()]
+            products.append(spc)
+
+        rxn.reactants = reactants
+        rxn.products = products        
+        
         if rxn not in self.core.reactions:
             self.core.reactions.append(rxn)
         if rxn in self.edge.reactions:
@@ -1331,8 +1431,7 @@ class CoreEdgeReactionModel:
         assert thermo_engine is not None
 
         for spec in self.newSpeciesList:
-            if spec.reactive: 
-                thermo_engine.submit(spec.getAugmentedInChI())
+            thermo_engine.submit(spec.getAugmentedInChI())
             self.addSpeciesToEdge(spec)
 
         for rxn in self.newReactionList:
