@@ -566,11 +566,11 @@ class CoreEdgeReactionModel:
             newReactions = []
             pdepNetwork = None
         
-            if isinstance(obj, (Species, EdgeSpecies)):
+            if isinstance(obj, (Species, InChISpecies)):
 
                 newSpecies = obj
 
-                if isinstance(obj, EdgeSpecies):
+                if isinstance(obj, InChISpecies):
                     newSpecies = Species(
                      molecule=[Molecule().fromAugmentedInChI(newSpecies.aug_inchi)],\
                      index = newSpecies.index,\
@@ -638,7 +638,7 @@ class CoreEdgeReactionModel:
                     else:
                         index += 1
             
-            if isinstance(obj, EdgeSpecies):
+            if isinstance(obj, InChISpecies):
                 # moved one species from edge to core
                 numOldEdgeSpecies -= 1
                 # moved these reactions from edge to core
@@ -729,7 +729,7 @@ class CoreEdgeReactionModel:
                 for spec in rxn.reactants:
                     if spec not in self.core.species:
                         allSpeciesInCore = False
-                        edge_spec = EdgeSpecies(spec)
+                        edge_spec = InChISpecies(spec)
                         
                         found = False
                         for spc in self.edge.species:
@@ -742,7 +742,7 @@ class CoreEdgeReactionModel:
                 for spec in rxn.products:
                     if spec not in self.core.species:
                         allSpeciesInCore = False
-                        edge_spec = EdgeSpecies(spec)
+                        edge_spec = InChISpecies(spec)
                         
                         found = False
                         for spc in self.edge.species:
@@ -958,7 +958,7 @@ class CoreEdgeReactionModel:
         self.core.species.append(spec)
         
         # convert spec to edge species and move reactions from core to edge:
-        aug_inchi = EdgeSpecies(spec).aug_inchi
+        aug_inchi = InChISpecies(spec).aug_inchi
 
         for spc in self.edge.species:
             if spc.aug_inchi == aug_inchi:
@@ -990,12 +990,12 @@ class CoreEdgeReactionModel:
         """
         Add a species `spec` to the reaction model edge.
         """
-        if isinstance(spec, EdgeSpecies):
+        if isinstance(spec, InChISpecies):
             self.edge.species.append(spec)
             return
 
         assert isinstance(spec, Species)
-        edge_spc = EdgeSpecies(spec)
+        edge_spc = InChISpecies(spec)
         self.edge.species.append(edge_spec)
         
 
@@ -1629,10 +1629,10 @@ class CoreEdgeReactionModel:
             return True
         return False
 
-class EdgeSpecies(object):
-    """docstring for EdgeSpecies"""
+class InChISpecies(object):
+    """docstring for InChISpecies"""
     def __init__(self, spc):
-        super(EdgeSpecies, self).__init__()
+        super(InChISpecies, self).__init__()
         assert isinstance(spc, Species), 'Species is not a rmgpy.rmg.model.Species instance.'
         self.aug_inchi = self.generate_aug_inchi(spc)
         self.index = spc.index
