@@ -279,7 +279,7 @@ class CoreEdgeReactionModel:
         # At this point we can conclude that the structure does not exist
         return False, None
 
-    def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True):
+    def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True, submit=True):
         """
         Formally create a new species from the specified `object`, which can be
         either a :class:`Molecule` object or an :class:`rmgpy.species.Species`
@@ -321,11 +321,11 @@ class CoreEdgeReactionModel:
         spec.generateResonanceIsomers()
         spec.molecularWeight = Quantity(spec.molecule[0].getMolecularWeight()*1000.,"amu")
         
-        
-        thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
-        assert thermo_engine is not None
+        if submit:
+            thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
+            assert thermo_engine is not None
 
-        thermo_engine.submit(spec.getAugmentedInChI())
+            thermo_engine.submit(spec.getAugmentedInChI())
 
         spec.generateEnergyTransferModel()
         formula = molecule.getFormula()
