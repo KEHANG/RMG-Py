@@ -845,6 +845,8 @@ class Reaction:
             reactants = self.reactants[:]
             products = self.products[:]
             
+            # TODO this will break for edge reactions; we cannot access spc.molecule[...] in InChISpecies
+            # extract C/O count from MF present in InChI to circumvent this problem
             reactantCarbons = [sum([1 for atom in reactant.molecule[0].atoms if atom.isCarbon()]) for reactant in reactants]
             productCarbons  = [sum([1 for atom in  product.molecule[0].atoms if atom.isCarbon()]) for product  in products ]
             reactantOxygens = [sum([1 for atom in reactant.molecule[0].atoms if atom.isOxygen()]) for reactant in reactants]
