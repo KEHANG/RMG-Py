@@ -43,6 +43,7 @@ from rmgpy.reaction import Reaction
 from rmgpy.kinetics import Arrhenius, ArrheniusEP
 from rmgpy.molecule import Bond, GroupBond, Group, Molecule
 from rmgpy.species import Species
+# TODO Replace it by rmgpy.rmg.model import Species
 
 from .common import KineticsError, UndeterminableKineticsError, saveEntry, \
                     UNIMOLECULAR_KINETICS_FAMILIES, BIMOLECULAR_KINETICS_FAMILIES
