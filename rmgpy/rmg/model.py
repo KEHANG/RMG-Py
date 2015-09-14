@@ -237,7 +237,7 @@ class CoreEdgeReactionModel:
         self.core_spc_dict = {} # "A" dictionary key = aug. inchi, value = rmgpy.rmg.model.Species
         self.inchi_spc_dict = {} # "B" dictionary key = aug. inchi, value = rmgpy.rmg.model.InChISpecies
 
-        self.reactionDict = {}
+        self.reactionDict = {} # 3 keys, 1st: family, 2nd: aug. inchi, 3rd: aug.inchi
         self.speciesCache = [None for i in range(4)]
         self.speciesCounter = 0
         self.reactionCounter = 0
@@ -394,13 +394,13 @@ class CoreEdgeReactionModel:
         """
 
         # Make sure the reactant and product lists are sorted before performing the check
-        rxn.reactants.sort()
-        rxn.products.sort()
+        rxn.reactants.sort(key=lambda spc: spc.getAugmentedInChI())
+        rxn.products.sort(key=lambda spc: spc.getAugmentedInChI())
 
         # Get the short-list of reactions with the same family, reactant1 and reactant2
-        r1 = rxn.reactants[0]
+        r1 = rxn.reactants[0].getAugmentedInChI()
         if len(rxn.reactants)==1: r2 = None
-        else: r2 = rxn.reactants[1]
+        else: r2 = rxn.reactants[1].getAugmentedInChI()
         family = rxn.family
         try:
             my_reactionList = self.reactionDict[family][r1][r2][:]
@@ -410,9 +410,9 @@ class CoreEdgeReactionModel:
         # if the family is its own reverse (H-Abstraction) then check the other direction
         if isinstance(family,KineticsFamily) and family.ownReverse: # (family may be a KineticsLibrary)
             # Get the short-list of reactions with the same family, product1 and product2
-            r1 = rxn.products[0]
+            r1 = rxn.products[0].getAugmentedInChI()
             if len(rxn.products)==1: r2 = None
-            else: r2 = rxn.products[1]
+            else: r2 = rxn.products[1].getAugmentedInChI()
             family = rxn.family
             try:
                 my_reactionList.extend(self.reactionDict[family][r1][r2])
@@ -440,9 +440,9 @@ class CoreEdgeReactionModel:
             if isinstance(family0, KineticsLibrary) and family0 != family:
 
                 # First check seed short-list in forward direction
-                r1 = rxn.reactants[0]
+                r1 = rxn.reactants[0].getAugmentedInChI()
                 if len(rxn.reactants)==1: r2 = None
-                else: r2 = rxn.reactants[1]
+                else: r2 = rxn.reactants[1].getAugmentedInChI()
                 try:
                     my_reactionList = self.reactionDict[family0][r1][r2]
                 except KeyError:
@@ -452,9 +452,9 @@ class CoreEdgeReactionModel:
                         (rxn0.reactants == rxn.products and rxn0.products == rxn.reactants):
                         return True, rxn0
                 # Now get the seed short-list of the reverse reaction
-                r1 = rxn.products[0]
+                r1 = rxn.products[0].getAugmentedInChI()
                 if len(rxn.products)==1: r2 = None
-                else: r2 = rxn.products[1]
+                else: r2 = rxn.products[1].getAugmentedInChI()
                 try:
                     my_reactionList = self.reactionDict[family0][r1][r2]
                 except KeyError:
@@ -554,8 +554,8 @@ class CoreEdgeReactionModel:
 
         # TODO reactants will be different types (Species, InChISpecies) depending on whether the reaction is part of core/edge
 
-        r1 = forward.reactants[0]
-        r2 = None if len(forward.reactants) == 1 else forward.reactants[1]
+        r1 = forward.reactants[0].getAugmentedInChI()
+        r2 = None if len(forward.reactants) == 1 else forward.reactants[1].getAugmentedInChI()
         family = forward.family
         # make dictionary entries if necessary
         if family not in self.reactionDict:
