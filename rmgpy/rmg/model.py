@@ -251,36 +251,6 @@ class CoreEdgeReactionModel:
         self.kineticsEstimator = 'group additivity'
         self.speciesConstraints = {}
 
-    def checkForExistingSpecies(self, molecule):
-        """
-        Check to see if an existing species contains the same
-        :class:`molecule.Molecule` as `molecule`. Returns ``True`` 
-        and the matched species (if found) or
-        ``False`` and ``None`` (if not found).
-        """
-
-        # First check cache and return if species is found
-        for i, spec in enumerate(self.speciesCache):
-            if spec is not None:
-                for mol in spec.molecule:
-                    if molecule.isIsomorphic(mol):
-                        self.speciesCache.pop(i)
-                        self.speciesCache.insert(0, spec)
-                        return True, spec
-
-        # Return an existing species if a match is found
-        formula = molecule.getFormula()
-        try:
-             speciesList = self.speciesDict[formula]
-        except KeyError:
-            return False, None
-        for spec in speciesList:
-            if spec.isIsomorphic(molecule):
-                self.speciesCache.pop()
-                self.speciesCache.insert(0, spec)
-                return True, spec
-        # At this point we can conclude that the structure does not exist
-        return False, None
 
     def makeNewInChISpecies(self, spec):
         """
@@ -341,16 +311,17 @@ class CoreEdgeReactionModel:
             label = label if label != '' else object.label
             reactive = object.reactive
             speciesIndex = object.index
+
+            # If desired, check to ensure that the species is new; return the
+            # existing species if not new
+            if spec.getAugmentedInChI() in self.core_spc_dict:
+                return self.core_spc_dict[spec.getAugmentedInChI()], False
+
         else:
+            assert False, 'We have not implemented a solution for this yet.'
             molecule = object
             
         molecule.clearLabeledAtoms()
-
-        # If desired, check to ensure that the species is new; return the
-        # existing species if not new
-        if checkForExisting:
-            found, spec = self.checkForExistingSpecies(molecule)
-            if found: return spec, False
 
         # Check that the structure is not forbidden
 
@@ -1243,9 +1214,6 @@ class CoreEdgeReactionModel:
         # remove from the global list of species, to free memory
         formula = spec.molecule[0].getFormula()
         del self.inchi_spc_dict[spec.getAugmentedInChI())]
-        if spec in self.speciesCache:
-            self.speciesCache.remove(spec)
-            self.speciesCache.append(None)
 
     def addReactionToCore(self, rxn):
         """
