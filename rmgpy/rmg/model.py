@@ -326,11 +326,13 @@ class CoreEdgeReactionModel:
 
         return inchi_spc
 
-    def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True, submit=True):
+    def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True, submit=True, updateIndex=True):
         """
         Formally create a new species from the specified `object`, which can be
         either a :class:`Molecule` object or an :class:`rmgpy.species.Species`
         object.
+
+        updateIndex is a flag that prevents this method from updating the species index attribute.
         """
 
         # TODO do we allow both Molecule and Species objects here?
@@ -338,6 +340,7 @@ class CoreEdgeReactionModel:
             molecule = object.molecule[0]
             label = label if label != '' else object.label
             reactive = object.reactive
+            speciesIndex = object.index
         else:
             molecule = object
             
@@ -360,11 +363,14 @@ class CoreEdgeReactionModel:
             # so that we can use the label in file paths
             label = molecule.toSMILES().replace('/','').replace('\\','')
         logging.debug('Creating new species {0}'.format(label))
-        if reactive:
-            self.speciesCounter += 1   # count only reactive species
-            speciesIndex = self.speciesCounter
-        else:
-            speciesIndex = -1
+        
+        if updateIndex:
+            if reactive:
+                self.speciesCounter += 1   # count only reactive species
+                speciesIndex = self.speciesCounter
+            else:
+                speciesIndex = -1
+
         spec = Species(index=speciesIndex, label=label, molecule=[molecule], reactive=reactive)
         spec.coreSizeAtCreation = len(self.core.species)
         spec.generateResonanceIsomers()
@@ -663,7 +669,7 @@ class CoreEdgeReactionModel:
                      )
 
                     # Assuming that this species is already present in the speciesDict
-                    newSpecies, not_new = self.makeNewSpecies(newSpecies)
+                    newSpecies, not_new = self.makeNewSpecies(newSpecies, updateIndex=False)
                     assert not not_new
 
                 if not newSpecies.reactive:
