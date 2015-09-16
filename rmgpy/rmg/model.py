@@ -1169,6 +1169,7 @@ class CoreEdgeReactionModel:
                     self.networkList.remove(network)
 
         logging.info('')
+        return len(speciesToPrune)
 
     def removeSpeciesFromEdge(self, spec):
         """
