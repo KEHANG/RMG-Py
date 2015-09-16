@@ -130,9 +130,9 @@ cdef class LiquidReactor(ReactionSystem):
         # Assign an index to each species (core first, then edge)
         speciesIndex = {}
         for index, spec in enumerate(coreSpecies):
-            speciesIndex[spec] = index
+            speciesIndex[spec.getAugmentedInChI()] = index
         for index, edge_spec in enumerate(edgeSpecies):
-            speciesIndex[edge_spec.aug_inchi] = index + numCoreSpecies
+            speciesIndex[edge_spec.getAugmentedInChI()] = index + numCoreSpecies
         # Assign an index to each reaction (core first, then edge)
         reactionIndex = {}
         for index, rxn in enumerate(coreReactions):
@@ -155,18 +155,10 @@ cdef class LiquidReactor(ReactionSystem):
                     equilibriumConstants[j] = rxn.getEquilibriumConstant(self.T.value_si)
                     reverseRateCoefficients[j] = forwardRateCoefficients[j] / equilibriumConstants[j]
                 for l, spec in enumerate(rxn.reactants):
-                    try:
-                        i = speciesIndex[spec]
-                    except KeyError, e:
-                        aug_inchi = spec.getAugmentedInChI()
-                        i = speciesIndex[aug_inchi]
+                    i = speciesIndex[spec.getAugmentedInChI()]
                     reactantIndices[j,l] = i
                 for l, spec in enumerate(rxn.products):
-                    try:
-                        i = speciesIndex[spec]
-                    except KeyError, e:
-                        aug_inchi = spec.getAugmentedInChI()
-                        i = speciesIndex[aug_inchi]
+                    i = speciesIndex[spec.getAugmentedInChI()]
                     productIndices[j,l] = i
 
         networkIndices = -numpy.ones((numPdepNetworks, 3), numpy.int )
@@ -174,7 +166,7 @@ cdef class LiquidReactor(ReactionSystem):
         for j, network in enumerate(pdepNetworks):
             networkLeakCoefficients[j] = network.getLeakCoefficient(self.T.value_si, self.P.value_si)
             for l, spec in enumerate(network.source):
-                i = speciesIndex[spec]
+                i = speciesIndex[spec.getAugmentedInChI()]
                 networkIndices[j,l] = i
 
         self.reactantIndices = reactantIndices
@@ -212,7 +204,7 @@ cdef class LiquidReactor(ReactionSystem):
             
         y0 = numpy.zeros(neq, numpy.float64)
         for spec, conc in self.initialConcentrations.iteritems():
-            self.coreSpeciesConcentrations[speciesIndex[spec]] = conc
+            self.coreSpeciesConcentrations[speciesIndex[spec.getAugmentedInChI()]] = conc
         V = 1.0 / numpy.sum(self.coreSpeciesConcentrations)
         self.V = V  #: volume (m3) required to contain one mole total of core species at start
         for j in range(numCoreSpecies):

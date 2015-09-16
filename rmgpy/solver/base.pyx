@@ -150,7 +150,7 @@ cdef class ReactionSystem(DASx):
 
         speciesIndex = {}
         for index, spec in enumerate(coreSpecies):
-            speciesIndex[spec] = index
+            speciesIndex[spec.getAugmentedInChI()] = index
         
         self.initializeModel(coreSpecies, coreReactions, edgeSpecies, edgeReactions, pdepNetworks, absoluteTolerance, relativeTolerance, sensitivity, sensitivityAbsoluteTolerance, sensitivityRelativeTolerance)
 
@@ -186,7 +186,7 @@ cdef class ReactionSystem(DASx):
             normSens_array = [[] for spec in self.sensitiveSpecies]    
             RTP = constants.R * self.T.value_si / self.P.value_si
             # identify sensitive species indices
-            sensSpeciesIndices = numpy.array([speciesIndex[spec] for spec in self.sensitiveSpecies], numpy.int)  # index within coreSpecies list of the sensitive species
+            sensSpeciesIndices = numpy.array([speciesIndex[spec.getAugmentedInChI()] for spec in self.sensitiveSpecies], numpy.int)  # index within coreSpecies list of the sensitive species
                 
         
         stepTime = 1e-12
@@ -296,7 +296,7 @@ cdef class ReactionSystem(DASx):
                         self.logConversions(speciesIndex, y0)
                         break
                 elif isinstance(term, TerminationConversion):
-                    index = speciesIndex[term.species]
+                    index = speciesIndex[term.species.getAugmentedInChI()]
                     if 1 - (y_coreSpecies[index] / y0[index]) > term.conversion:
                         terminated = True
                         logging.info('At time {0:10.4e} s, reached target termination conversion: {1:f} of {2}'.format(self.t,term.conversion,term.species))
@@ -357,7 +357,7 @@ cdef class ReactionSystem(DASx):
         """
         for term in self.termination:
             if isinstance(term, TerminationConversion):
-                index = speciesIndex[term.species]
+                index = speciesIndex[term.species.getAugmentedInChI()]
                 X = 1 - (self.y[index] / y0[index])
                 logging.info('    {0} conversion: {1:<10.4g}'.format(term.species, X))
 

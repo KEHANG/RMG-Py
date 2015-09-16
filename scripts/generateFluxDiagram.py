@@ -287,7 +287,7 @@ def simulate(reactionModel, reactionSystem, settings = None):
     
     speciesIndex = {}
     for index, spec in enumerate(coreSpecies):
-        speciesIndex[spec] = index
+        speciesIndex[spec.getAugmentedInChI()] = index
     
     reactionSystem.initializeModel(coreSpecies, coreReactions, edgeSpecies, edgeReactions, [], absoluteTolerance, relativeTolerance)
 
