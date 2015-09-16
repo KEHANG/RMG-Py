@@ -401,8 +401,8 @@ class RMG:
                 
             # Also always add in a few bath gases (since RMG-Java does)
             for label, smiles in [('Ar','[Ar]'), ('He','[He]'), ('Ne','[Ne]'), ('N2','N#N')]:
-                molecule = Molecule().fromSMILES(smiles)
-                spec, isNew = self.reactionModel.makeNewSpecies(molecule, label=label, reactive=False)
+                spec = Species().fromSMILES(smiles)
+                spec, isNew = self.reactionModel.makeNewSpecies(spec, label=label, reactive=False)
                 if isNew:
                     self.initialSpecies.append(spec)
             
