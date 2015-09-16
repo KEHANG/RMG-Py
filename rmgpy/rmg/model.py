@@ -71,15 +71,14 @@ class Species(rmgpy.species.Species):
     def __init__(self, index=-1, label='', thermo=None, conformer=None, 
                  molecule=None, transportData=None, molecularWeight=None, 
                  dipoleMoment=None, polarizability=None, Zrot=None, 
-                 energyTransferModel=None, reactive=True, props=None, coreSizeAtCreation=0):
+                 energyTransferModel=None, reactive=True, props=None):
         rmgpy.species.Species.__init__(self, index, label, thermo, conformer, molecule, transportData, molecularWeight, dipoleMoment, polarizability, Zrot, energyTransferModel, reactive, props)
-        self.coreSizeAtCreation = coreSizeAtCreation
 
     def __reduce__(self):
         """
         A helper function used when pickling an object.
         """
-        return (Species, (self.index, self.label, self.thermo, self.conformer, self.molecule, self.transportData, self.molecularWeight, self.dipoleMoment, self.polarizability, self.Zrot, self.energyTransferModel, self.reactive, self.props, self.coreSizeAtCreation),)
+        return (Species, (self.index, self.label, self.thermo, self.conformer, self.molecule, self.transportData, self.molecularWeight, self.dipoleMoment, self.polarizability, self.Zrot, self.energyTransferModel, self.reactive, self.props),)
 
     def generateStatMech(self, database):
         """
@@ -283,7 +282,6 @@ class CoreEdgeReactionModel:
             speciesIndex = self.speciesCounter
 
         model_spc = Species(index=speciesIndex, label=label, molecule=[molecule], reactive=reactive)
-        model_spc.coreSizeAtCreation = len(self.core.species)
 
         self.updateCoreSizeAtCreation(model_spc)
 
@@ -292,11 +290,13 @@ class CoreEdgeReactionModel:
         thermo_engine.submit(model_spc.getAugmentedInChI())
 
         inchi_spc = InChISpecies(model_spc)
+        inchi_spc.coreSizeAtCreation = len(self.core.species)
+
         self.inchi_spc_dict[aug_inchi] = inchi_spc
 
         return inchi_spc
 
-    def makeNewSpecies(self, object, label='', reactive=True, checkForExisting=True, submit=True, updateIndex=True):
+    def makeNewSpecies(self, spc, label='', reactive=True, checkForExisting=True, submit=True, updateIndex=True):
         """
         Formally create a new species from the specified `object`, which can be
         either a :class:`Molecule` object or an :class:`rmgpy.species.Species`
@@ -343,7 +343,6 @@ class CoreEdgeReactionModel:
                 speciesIndex = -1
 
         spec = Species(index=speciesIndex, label=label, molecule=[molecule], reactive=reactive)
-        spec.coreSizeAtCreation = len(self.core.species)
         spec.generateResonanceIsomers()
         spec.molecularWeight = Quantity(spec.molecule[0].getMolecularWeight()*1000.,"amu")
         
@@ -636,7 +635,6 @@ class CoreEdgeReactionModel:
                      molecule=[Molecule().fromAugmentedInChI(newSpecies.aug_inchi)],\
                      index = newSpecies.index,\
                      label = newSpecies.label,\
-                     coreSizeAtCreation = newSpecies.coreSizeAtCreation
                      )
 
                     # Assuming that this species is already present in the speciesDict
@@ -1710,7 +1708,7 @@ class InChISpecies(object):
         self.aug_inchi = self.generate_aug_inchi(spc)
         self.index = spc.index
         self.label = spc.label
-        self.coreSizeAtCreation = spc.coreSizeAtCreation
+        self.coreSizeAtCreation = -1
 
     def __str__(self):
         """
