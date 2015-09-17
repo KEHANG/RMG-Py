@@ -426,6 +426,42 @@ class Reaction:
         # should have already returned if it matches forwards, or we're not allowed to match backwards
         return  (reverseReactantsMatch and reverseProductsMatch)
     
+    def isEqual(self, other, eitherDirection=True):
+        """
+        Return ``True`` if this reaction is the same as the `other` reaction,
+        or ``False`` if they are different. 
+        If `eitherDirection=False` then the directions must match.
+        """
+        # TODO Cache the list of inchis per reaction?
+        self_reactant_inchis = sorted([spc.getAugmentedInChI() for spc in self.reactants])
+        self_product_inchis = sorted([spc.getAugmentedInChI() for spc in self.products])
+
+        other_reactant_inchis = sorted([spc.getAugmentedInChI() for spc in other.reactants])
+        other_product_inchis = sorted([spc.getAugmentedInChI() for spc in other.products])
+
+        forwardReactantsMatch = self_reactant_inchis == other_reactant_inchis
+
+        # Compare reactants to reactants
+        forwardReactantsMatch = self_reactant_inchis == other_reactant_inchis
+
+        # Compare products to products
+        forwardProductsMatch = self_product_inchis == other_product_inchis
+
+        # Return now, if we can
+        if (forwardReactantsMatch and forwardProductsMatch):
+            return True
+        if not eitherDirection:
+            return False
+        
+        # Compare reactants to products
+        reverseReactantsMatch = self_reactant_inchis == other_product_inchis
+
+        # Compare products to reactants
+        reverseProductsMatch = self_product_inchis == other_reactant_inchis
+         
+        # should have already returned if it matches forwards, or we're not allowed to match backwards
+        return  (reverseReactantsMatch and reverseProductsMatch)
+
     def getEnthalpyOfReaction(self, T):
         """
         Return the enthalpy of reaction in J/mol evaluated at temperature

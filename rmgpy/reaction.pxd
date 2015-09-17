@@ -62,6 +62,8 @@ cdef class Reaction:
 
     cpdef bint isIsomorphic(self, Reaction other, bint eitherDirection=?)
 
+    cpdef bint isEqual(self, Reaction other, bint eitherDirection=?)
+
     cpdef double getEnthalpyOfReaction(self, double T)
 
     cpdef double getEntropyOfReaction(self, double T)
