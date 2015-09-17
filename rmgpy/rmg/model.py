@@ -1714,7 +1714,8 @@ class InChISpecies(object):
         """
         Return a string representation of the species, in the form 'label(id)'.
         """
-        return '{0}({1:d}), {2}'.format(self.label, self.index, self.aug_inchi)
+        if self.index == -1: return self.label
+        else: return '{0}({1:d})'.format(self.label, self.index)
 
     def getAugmentedInChI(self):
         return self.aug_inchi
