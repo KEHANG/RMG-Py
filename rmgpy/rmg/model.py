@@ -158,7 +158,7 @@ class ReactionModel:
         commonReactions = {}; uniqueReactions = []
         for rxn in other.reactions:
             for rxn0 in finalModel.reactions:
-                if rxn.isIsomorphic(rxn0, eitherDirection=True):
+                if rxn.isEqual(rxn0, eitherDirection=True):
                     commonReactions[rxn] = rxn0                    
                     if not rxn0.kinetics.isIdenticalTo(rxn.kinetics):
                         print 'Reaction {0} kinetics from model 1 did not match that of model 2.'.format(str(rxn0))

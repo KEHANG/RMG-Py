@@ -1595,8 +1595,8 @@ class KineticsFamily(Database):
         kineticsList = []
         entries = depository.entries.values()
         for entry in entries:
-            if entry.item.isIsomorphic(reaction):
-                kineticsList.append([deepcopy(entry.data), entry, entry.item.isIsomorphic(reaction, eitherDirection=False)])
+            if entry.item.isEqual(reaction):
+                kineticsList.append([deepcopy(entry.data), entry, entry.item.isEqual(reaction, eitherDirection=False)])
         for kinetics, entry, isForward in kineticsList:
             if kinetics is not None:
                 kinetics.comment += "Matched reaction {0} {1} in {2}".format(entry.index, entry.label, depository.label)

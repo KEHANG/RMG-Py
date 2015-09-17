@@ -842,7 +842,7 @@ def saveDiffHTML(path, commonSpeciesList, speciesList1, speciesList2, commonReac
      <td class="family" width=40%>{{ rxn2.getSource().label }}</td>
  </tr>
 
-<tr width=100%>{% if not rxn1.isIsomorphic(rxn2, eitherDirection=False) %} 
+<tr width=100%>{% if not rxn1.isEqual(rxn2, eitherDirection=False) %} 
 <td colspan="2" width=50%></td>
 <td colspan="2" width=50%>* Reaction was found in reverse 
 
