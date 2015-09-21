@@ -91,9 +91,9 @@ def database(
 
 def species(label, structure, reactive=True):
     from rmgpy.species import Species
-    spec = Species(molecule=[structure])
+    spec = Species(molecule=[structure], reactive=reactive)
     logging.debug('Found {0} species "{1}" ({2})'.format('reactive' if reactive else 'nonreactive', label, structure.toSMILES()))
-    spec, isNew = rmg.reactionModel.makeNewSpecies(spec, label=label, reactive=reactive, submit=False)
+    spec, isNew = rmg.reactionModel.makeNewSpecies(spec, label=label, submit=False)
     if not isNew:
         raise InputError("Species {0} is a duplicate of {1}. Species in input file must be unique".format(label,spec.label))
     rmg.initialSpecies.append(spec)

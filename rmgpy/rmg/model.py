@@ -296,7 +296,7 @@ class CoreEdgeReactionModel:
 
         return inchi_spc
 
-    def makeNewSpecies(self, spc, label='', reactive=True, checkForExisting=True, submit=True, updateIndex=True):
+    def makeNewSpecies(self, spc, label='', checkForExisting=True, submit=True, updateIndex=True):
         """
         Formally create a new species from the specified `spc`, which can be
         either a :class:`Molecule` spc or an :class:`rmgpy.species.Species`
@@ -308,7 +308,6 @@ class CoreEdgeReactionModel:
         # TODO do we allow both Molecule and Species objects here?
         if isinstance(spc, rmgpy.species.Species):
             label = label if label != '' else spc.label
-            reactive = spc.reactive
             speciesIndex = spc.index
 
             # If desired, check to ensure that the species is new; return the
@@ -334,13 +333,11 @@ class CoreEdgeReactionModel:
         logging.debug('Creating new species {0}'.format(label))
         
         if updateIndex:
-            if reactive:
+            if spc.reactive:
                 self.speciesCounter += 1   # count only reactive species
                 speciesIndex = self.speciesCounter
-            else:
-                speciesIndex = -1
 
-        new_spec = Species(index=speciesIndex, label=label, molecule=spc.molecule, reactive=reactive)
+        new_spec = Species(index=speciesIndex, label=label, molecule=spc.molecule, reactive=spc.reactive)
         new_spec.molecularWeight = Quantity(new_spec.molecule[0].getMolecularWeight()*1000.,"amu")
         
         if submit:

@@ -402,7 +402,8 @@ class RMG:
             # Also always add in a few bath gases (since RMG-Java does)
             for label, smiles in [('Ar','[Ar]'), ('He','[He]'), ('Ne','[Ne]'), ('N2','N#N')]:
                 spec = Species().fromSMILES(smiles)
-                spec, isNew = self.reactionModel.makeNewSpecies(spec, label=label, reactive=False)
+                spec.reactive = False
+                spec, isNew = self.reactionModel.makeNewSpecies(spec, label=label)
                 if isNew:
                     self.initialSpecies.append(spec)
             
@@ -754,13 +755,13 @@ class RMG:
         for reactionSystem in self.reactionSystems:
             for term in reactionSystem.termination:
                 if isinstance(term, TerminationConversion):
-                    term.species, isNew = self.reactionModel.makeNewSpecies(term.species.molecule[0], term.species.label, term.species.reactive)
+                    term.species, isNew = self.reactionModel.makeNewSpecies(term.species.molecule[0], term.species.label)
     
         # The initial mole fractions in the reaction systems still point to the old species
         for reactionSystem in self.reactionSystems:
             initialMoleFractions = {}
             for spec0, moleFrac in reactionSystem.initialMoleFractions.iteritems():
-                spec, isNew = self.reactionModel.makeNewSpecies(spec0.molecule[0], spec0.label, spec0.reactive)
+                spec, isNew = self.reactionModel.makeNewSpecies(spec0.molecule[0], spec0.label)
                 initialMoleFractions[spec] = moleFrac
             reactionSystem.initialMoleFractions = initialMoleFractions
     
