@@ -296,7 +296,7 @@ class CoreEdgeReactionModel:
 
         return inchi_spc
 
-    def makeNewSpecies(self, spc, label='', checkForExisting=True, submit=True, updateIndex=True):
+    def makeNewSpecies(self, spc, checkForExisting=True, submit=True, updateIndex=True):
         """
         Formally create a new species from the specified `spc`, which can be
         either a :class:`Molecule` spc or an :class:`rmgpy.species.Species`
@@ -305,9 +305,7 @@ class CoreEdgeReactionModel:
         updateIndex is a flag that prevents this method from updating the species index attribute.
         """
 
-        # TODO do we allow both Molecule and Species objects here?
         if isinstance(spc, rmgpy.species.Species):
-            label = label if label != '' else spc.label
             speciesIndex = spc.index
 
             # If desired, check to ensure that the species is new; return the
@@ -323,21 +321,21 @@ class CoreEdgeReactionModel:
         # Check that the structure is not forbidden
 
         # If we're here then we're ready to make the new species
-        if label == '': 
+        if spc.label == '': 
             # Use SMILES as default format for label
             # However, SMILES can contain slashes (to describe the
             # stereochemistry around double bonds); since RMG doesn't 
             # distinguish cis and trans isomers, we'll just strip these out
             # so that we can use the label in file paths
-            label = spc.molecule[0].toSMILES().replace('/','').replace('\\','')
-        logging.debug('Creating new species {0}'.format(label))
+            spc.label = spc.molecule[0].toSMILES().replace('/','').replace('\\','')
+        logging.debug('Creating new species {0}'.format(spc.label))
         
         if updateIndex:
             if spc.reactive:
                 self.speciesCounter += 1   # count only reactive species
                 speciesIndex = self.speciesCounter
 
-        new_spec = Species(index=speciesIndex, label=label, molecule=spc.molecule, reactive=spc.reactive)
+        new_spec = Species(index=speciesIndex, label=spc.label, molecule=spc.molecule, reactive=spc.reactive)
         new_spec.molecularWeight = Quantity(new_spec.molecule[0].getMolecularWeight()*1000.,"amu")
         
         if submit:

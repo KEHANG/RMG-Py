@@ -403,7 +403,8 @@ class RMG:
             for label, smiles in [('Ar','[Ar]'), ('He','[He]'), ('Ne','[Ne]'), ('N2','N#N')]:
                 spec = Species().fromSMILES(smiles)
                 spec.reactive = False
-                spec, isNew = self.reactionModel.makeNewSpecies(spec, label=label)
+                spec.label = label
+                spec, isNew = self.reactionModel.makeNewSpecies(spec)
                 if isNew:
                     self.initialSpecies.append(spec)
             
