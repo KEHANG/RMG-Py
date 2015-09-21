@@ -298,30 +298,28 @@ class CoreEdgeReactionModel:
 
     def makeNewSpecies(self, spc, label='', reactive=True, checkForExisting=True, submit=True, updateIndex=True):
         """
-        Formally create a new species from the specified `object`, which can be
-        either a :class:`Molecule` object or an :class:`rmgpy.species.Species`
-        object.
+        Formally create a new species from the specified `spc`, which can be
+        either a :class:`Molecule` spc or an :class:`rmgpy.species.Species`
+        spc.
 
         updateIndex is a flag that prevents this method from updating the species index attribute.
         """
 
         # TODO do we allow both Molecule and Species objects here?
-        if isinstance(object, rmgpy.species.Species):
-            molecule = object.molecule[0]
-            label = label if label != '' else object.label
-            reactive = object.reactive
-            speciesIndex = object.index
+        if isinstance(spc, rmgpy.species.Species):
+            label = label if label != '' else spc.label
+            reactive = spc.reactive
+            speciesIndex = spc.index
 
             # If desired, check to ensure that the species is new; return the
             # existing species if not new
-            if spec.getAugmentedInChI() in self.core_spc_dict:
-                return self.core_spc_dict[spec.getAugmentedInChI()], False
-
+            if spc.getAugmentedInChI() in self.core_spc_dict:
+                return self.core_spc_dict[spc.getAugmentedInChI()], False
         else:
             assert False, 'We have not implemented a solution for this yet.'
-            molecule = object
-            
-        molecule.clearLabeledAtoms()
+        
+        for mol in spc.molecule:    
+            mol.clearLabeledAtoms()
 
         # Check that the structure is not forbidden
 
@@ -332,7 +330,7 @@ class CoreEdgeReactionModel:
             # stereochemistry around double bonds); since RMG doesn't 
             # distinguish cis and trans isomers, we'll just strip these out
             # so that we can use the label in file paths
-            label = molecule.toSMILES().replace('/','').replace('\\','')
+            label = spc.molecule[0].toSMILES().replace('/','').replace('\\','')
         logging.debug('Creating new species {0}'.format(label))
         
         if updateIndex:
@@ -342,25 +340,24 @@ class CoreEdgeReactionModel:
             else:
                 speciesIndex = -1
 
-        spec = Species(index=speciesIndex, label=label, molecule=[molecule], reactive=reactive)
-        spec.generateResonanceIsomers()
-        spec.molecularWeight = Quantity(spec.molecule[0].getMolecularWeight()*1000.,"amu")
+        new_spec = Species(index=speciesIndex, label=label, molecule=spc.molecule, reactive=reactive)
+        new_spec.molecularWeight = Quantity(new_spec.molecule[0].getMolecularWeight()*1000.,"amu")
         
         if submit:
             thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
             assert thermo_engine is not None
 
-            thermo_engine.submit(spec.getAugmentedInChI())
+            thermo_engine.submit(new_spec.getAugmentedInChI())
 
-        spec.generateEnergyTransferModel()
+        new_spec.generateEnergyTransferModel()
 
-        self.inchi_spc_dict[spec.getAugmentedInChI()] = InChISpecies(spec)
+        self.inchi_spc_dict[new_spec.getAugmentedInChI()] = InChISpecies(new_spec)
 
 
         # Since the species is new, add it to the list of new species
-        self.newSpeciesList.append(spec)
+        self.newSpeciesList.append(new_spec)
 
-        return spec, True
+        return new_spec, True
 
     def checkForExistingReaction(self, rxn):
         """
@@ -1211,7 +1208,7 @@ class CoreEdgeReactionModel:
 
         # remove from the global list of species, to free memory
         formula = spec.molecule[0].getFormula()
-        del self.inchi_spc_dict[spec.getAugmentedInChI())]
+        del self.inchi_spc_dict[spec.getAugmentedInChI()]
 
     def addReactionToCore(self, rxn):
         """
