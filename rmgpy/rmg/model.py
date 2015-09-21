@@ -304,16 +304,15 @@ class CoreEdgeReactionModel:
 
         updateIndex is a flag that prevents this method from updating the species index attribute.
         """
+        
+        assert isinstance(spc, rmgpy.species.Species), 'The species is not a rmgpy.species.Species object: {}'.format(spc)
 
-        if isinstance(spc, rmgpy.species.Species):
-            speciesIndex = spc.index
+        speciesIndex = spc.index
 
-            # If desired, check to ensure that the species is new; return the
-            # existing species if not new
-            if spc.getAugmentedInChI() in self.core_spc_dict:
-                return self.core_spc_dict[spc.getAugmentedInChI()], False
-        else:
-            assert False, 'We have not implemented a solution for this yet.'
+        # If desired, check to ensure that the species is new; return the
+        # existing species if not new
+        if spc.getAugmentedInChI() in self.core_spc_dict:
+            return self.core_spc_dict[spc.getAugmentedInChI()], False
         
         for mol in spc.molecule:    
             mol.clearLabeledAtoms()
