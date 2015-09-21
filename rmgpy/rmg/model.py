@@ -801,14 +801,12 @@ class CoreEdgeReactionModel:
                         if not found:
                             self.addSpeciesToEdge(edge_spec)
             
-            isomerAtoms = sum([len(spec.molecule[0].atoms) for spec in rxn.reactants])
-            
             # Decide whether or not to handle the reaction as a pressure-dependent reaction
             pdep = True
             if not self.pressureDependence:
                 # The pressure dependence option is turned off entirely
                 pdep = False
-            elif self.pressureDependence.maximumAtoms is not None and self.pressureDependence.maximumAtoms < isomerAtoms:
+            elif self.pressureDependence.maximumAtoms is not None and self.pressureDependence.maximumAtoms < sum([len(spec.molecule[0].atoms) for spec in rxn.reactants]):# TODO isomerAtoms should be computed in a different way.
                 # The reaction involves so many atoms that pressure-dependent effects are assumed to be negligible
                 pdep = False
             elif not (rxn.isIsomerization() or rxn.isDissociation() or rxn.isAssociation()):
