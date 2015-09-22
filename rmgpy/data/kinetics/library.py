@@ -41,7 +41,6 @@ from rmgpy.reaction import Reaction
 from rmgpy.kinetics import Arrhenius, ThirdBody, Lindemann, Troe, \
                            PDepArrhenius, MultiArrhenius, MultiPDepArrhenius, \
                            PDepKineticsModel
-from rmgpy.molecule import Molecule
 from rmgpy.species import Species
 from .common import saveEntry
 
@@ -317,8 +316,8 @@ class KineticsLibrary(Database):
         # Add common bath gases (Ar, Ne, He, N2) if not already present
         for label, smiles in [('Ar','[Ar]'), ('He','[He]'), ('Ne','[Ne]'), ('N2','N#N')]:
             if label not in species:
-                molecule = Molecule().fromSMILES(smiles)
-                spec = Species(label=label, molecule=[molecule])
+                spec = Species().fromSMILES(smiles)
+                spec.label=label
                 species[label] = spec                         
 
         reactions = []
