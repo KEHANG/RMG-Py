@@ -1243,6 +1243,17 @@ class KineticsFamily(Database):
             reaction.products = [moleculeDict[molecule] for molecule in reaction.products]
             reaction.pairs = [(moleculeDict[reactant],moleculeDict[product]) for reactant, product in reaction.pairs]
 
+        for reaction in reactionList:
+            if hasattr(reaction, 'reverse'):
+                moleculeDict = {}
+                for molecule in reaction.reverse.reactants:
+                    moleculeDict[molecule] = Species(molecule=[molecule])
+                for molecule in reaction.reverse.products:
+                    moleculeDict[molecule] = Species(molecule=[molecule])
+                reaction.reverse.reactants = [moleculeDict[molecule] for molecule in reaction.reverse.reactants]
+                reaction.reverse.products = [moleculeDict[molecule] for molecule in reaction.reverse.products]
+                reaction.reverse.pairs = [(moleculeDict[reactant],moleculeDict[product]) for reactant, product in reaction.reverse.pairs]
+
         return reactionList
     
     def calculateDegeneracy(self, reaction):
