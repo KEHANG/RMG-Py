@@ -345,8 +345,6 @@ class CoreEdgeReactionModel:
 
         new_spec.generateEnergyTransferModel()
 
-        self.inchi_spc_dict[new_spec.getAugmentedInChI()] = InChISpecies(new_spec)
-
 
         # Since the species is new, add it to the list of new species
         self.newSpeciesList.append(new_spec)
@@ -630,7 +628,6 @@ class CoreEdgeReactionModel:
 
                     # Assuming that this species is already present in the speciesDict
                     newSpecies, not_new = self.makeNewSpecies(newSpecies, updateIndex=False)
-                    assert not not_new
 
                 if not newSpecies.reactive:
                     logging.info('NOT generating reactions for unreactive species {0}'.format(newSpecies))
