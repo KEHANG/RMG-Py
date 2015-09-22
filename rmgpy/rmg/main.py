@@ -600,7 +600,7 @@ class RMG:
                 logging.info('    Restart file size: %.2f MB' % (restartSize[-1]))
             else:
                 restartSize.append(0.0)
-            self.saveExecutionStatistics(execTime, coreSpeciesCount, coreReactionCount, edgeSpeciesCount, edgeReactionCount, memoryUseAfterDynSimu, memoryUseAfterPruning, memoryUseAfterGC, memoryUseAfterEnlarge, restartSize)
+            self.saveExecutionStatistics(execTime, coreSpeciesCount, coreReactionCount, edgeSpeciesCount, edgeReactionCount, prunedSpeciesNumList, memoryUseAfterDynSimu, memoryUseAfterPruning, memoryUseAfterGC, memoryUseAfterEnlarge, restartSize)
             if self.generatePlots:
                 self.generateExecutionPlots(execTime, coreSpeciesCount, coreReactionCount, edgeSpeciesCount, edgeReactionCount, memoryUseAfterEnlarge, restartSize)
     
