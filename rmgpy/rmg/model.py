@@ -854,7 +854,7 @@ class CoreEdgeReactionModel:
                         t_SCOOP_1 = time.time()
 
                         for species_idx in range(corespeciesNum):
-                            reactions = react_species_task_results[species_idx]
+                            reactions = react_species_task_results[species_idx][0]
                             self.reactionAttributesRedirection(reactions, rootSpeciesDict)
 
                             newReactions.extend(reactions)
