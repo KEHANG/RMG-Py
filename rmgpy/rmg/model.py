@@ -283,8 +283,6 @@ class CoreEdgeReactionModel:
 
         model_spc = Species(index=speciesIndex, label=label, molecule=[molecule], reactive=reactive)
 
-        self.updateCoreSizeAtCreation(model_spc)
-
         thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
         assert thermo_engine is not None
         thermo_engine.submit(model_spc.getAugmentedInChI())
@@ -292,7 +290,7 @@ class CoreEdgeReactionModel:
         inchi_spc = InChISpecies(model_spc)
         inchi_spc.coreSizeAtCreation = len(self.core.species)
 
-        self.inchi_spc_dict[aug_inchi] = inchi_spc
+        self.inchi_spc_dict[inchi_spc.getAugmentedInChI()] = inchi_spc
 
         return inchi_spc
 
@@ -621,7 +619,7 @@ class CoreEdgeReactionModel:
 
                 if isinstance(obj, InChISpecies):
                     newSpecies = Species(
-                     molecule=[Molecule().fromAugmentedInChI(newSpecies.aug_inchi)],\
+                     molecule=[Molecule().fromAugmentedInChI(newSpecies.getAugmentedInChI())],\
                      index = newSpecies.index,\
                      label = newSpecies.label,\
                      )
