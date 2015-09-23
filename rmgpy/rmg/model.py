@@ -294,7 +294,7 @@ class CoreEdgeReactionModel:
 
         return inchi_spc
 
-    def makeNewSpecies(self, spc, checkForExisting=True, submit=True, updateIndex=True):
+    def makeNewSpecies(self, spc, submit=True, updateIndex=True):
         """
         Formally create a new species from the specified `spc`, which can be
         either a :class:`Molecule` spc or an :class:`rmgpy.species.Species`
