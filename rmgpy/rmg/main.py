@@ -399,6 +399,11 @@ class RMG:
             for library, option in self.reactionLibraries:
                 self.reactionModel.addReactionLibraryToEdge(library)
                 
+            #add inert, input species to the core species dictionary, so that they are not added to initial species twice:
+            for spc in self.initialSpecies:
+                if not spc.reactive:
+                    self.reactionModel.core_spc_dict[spc.getAugmentedInChI()] = spc
+
             # Also always add in a few bath gases (since RMG-Java does)
             for label, smiles in [('Ar','[Ar]'), ('He','[He]'), ('Ne','[Ne]'), ('N2','N#N')]:
                 spec = Species().fromSMILES(smiles)
