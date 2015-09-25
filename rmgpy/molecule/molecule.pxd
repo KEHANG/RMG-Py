@@ -211,3 +211,4 @@ cdef class Molecule(Graph):
 
     cpdef int calculateSymmetryNumber(self) except -1
     
+    cpdef updateAtomConnectivityValues(self)

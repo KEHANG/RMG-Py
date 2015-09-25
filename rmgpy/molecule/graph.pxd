@@ -92,7 +92,7 @@ cdef class Graph:
 
     cpdef resetConnectivityValues(self)
 
-    cpdef list __update(self, old_values, trial_number)
+    cpdef list update_recurse(self, old_values, trial_number)
 
     cpdef sortVertices(self)
 

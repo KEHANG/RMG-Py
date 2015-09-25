@@ -288,7 +288,7 @@ cdef class Graph:
         cdef int value
         cdef list connectivityValues
 
-        connectivityValues = self.__update([len(vertex.edges) for vertex in self.vertices], 0)
+        connectivityValues = self.update_recurse([len(vertex.edges) for vertex in self.vertices], 0)
         for vertex, value in zip(self.vertices, connectivityValues):
             vertex.connectivity = value
 
@@ -399,7 +399,7 @@ cdef class Graph:
         cdef Vertex vertex
         for vertex in self.vertices: vertex.resetConnectivityValues()
         
-    cpdef list __update(self, old_values, trial_number):
+    cpdef list update_recurse(self, old_values, trial_number):
         """
         Recursively generates updated connectivity values, until the number 
         of different connectivity values does not increase anymore. 
@@ -419,10 +419,10 @@ cdef class Graph:
         element_count_new = len(set(new_values))
 
         if element_count_new > element_count_old:
-            return self.__update(new_values, 0)
+            return self.update_recurse(new_values, 0)
         elif element_count_new == element_count_old and trial_number <= MAX_NUMBER_OF_TRIALS:
             trial_number += 1
-            return self.__update(new_values, trial_number)
+            return self.update_recurse(new_values, trial_number)
         else:
             return old_values
 

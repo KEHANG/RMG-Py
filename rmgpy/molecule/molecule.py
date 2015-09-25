@@ -184,10 +184,10 @@ class Atom(Vertex):
             return True
     
     def getDescriptor(self):
-        return (self.getAtomConnectivityValue(), self.symbol, self.radicalElectrons, self.lonePairs, self.charge)
+        return (self.getAtomConnectivityValue(), self.number)
 
     def getAtomConnectivityValue(self):
-        return getVertexConnectivityValue(self)
+        return -1*self.connectivity
 
     def isSpecificCaseOf(self, other):
         """
@@ -690,7 +690,7 @@ class Molecule(Graph):
         Update multiplicity, and sort atoms using the new
         connectivity values.
         """
-        self.updateConnectivityValues()
+        self.updateAtomConnectivityValues()
         self.updateAtomTypes()
         self.updateMultiplicity()
         self.sortAtoms()
@@ -701,14 +701,14 @@ class Molecule(Graph):
         Sort the atoms in the graph. This can make certain operations, e.g.
         the isomorphism functions, much more efficient.
         """
-        cython.declare(vertex=Vertex, a=Atom, index=int)
-        for vertex in self.vertices:
-            if vertex.sortingLabel < 0:
-                self.updateConnectivityValues()
+        cython.declare(a=Atom, index=int)
+        for a in self.atoms:
+            if a.sortingLabel < 0:
+                self.updateAtomConnectivityValues()
                 break
         self.atoms.sort(key=lambda a: a.getDescriptor())
-        for index, vertex in enumerate(self.vertices):
-            vertex.sortingLabel = index
+        for index, a in enumerate(self.atoms):
+            a.sortingLabel = index
 
     def getFormula(self):
         """
@@ -1189,7 +1189,7 @@ class Molecule(Graph):
         from .adjlist import fromAdjacencyList
         
         self.vertices, self.multiplicity = fromAdjacencyList(adjlist, group=False, saturateH=saturateH)
-        self.updateConnectivityValues()
+        self.updateAtomConnectivityValues()
         self.updateAtomTypes()
         
         # Check if multiplicity is possible
@@ -1901,10 +1901,20 @@ class Molecule(Graph):
         # this is necessary, because saturating with H shouldn't be
         # changing atom types, but it doesn't hurt anything and is not
         # very expensive, so will do it anyway)
-        self.updateConnectivityValues()
+        self.updateAtomConnectivityValues()
         self.sortAtoms()
         self.updateAtomTypes()
         self.updateLonePairs()
         self.multiplicity = 1
 
         return added
+
+    def updateAtomConnectivityValues(self):
+        """
+        Update the connectivity values for each atom in the molecule.
+        """
+        cython.declare(atom=Atom, value=int, connectivityValues=list)
+
+        connectivityValues = self.update_recurse([atom.number * len(atom.bonds) for atom in self.atoms], 0)
+        for atom, value in zip(self.atoms, connectivityValues):
+            atom.connectivity = value
