@@ -215,10 +215,6 @@ cdef class VF2:
         cdef Edge edge1, edge2
         cdef int term1Count, term2Count, neither1Count, neither2Count
         
-        if not self.subgraph:
-            # To be feasible the connectivity values must be an exact match
-            if vertex1.connectivity != vertex2.connectivity: return False
-        
         # Semantic check #1: vertex1 and vertex2 must be equivalent
         if self.subgraph:
             if not vertex1.isSpecificCaseOf(vertex2): return False
