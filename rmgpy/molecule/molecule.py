@@ -696,23 +696,6 @@ class Molecule(Graph):
         self.sortAtoms()
 
 
-    def sortAtoms(self):
-        """
-        Sort the atoms in the graph. This can make certain operations, e.g.
-        the isomorphism functions, much more efficient.
-        """
-        cython.declare(a=Atom)
-        for a in self.atoms:
-            if a.sortingLabel != 2: break
-        else:
-            return
-            
-        self.updateAtomConnectivityValues()
-        self.atoms.sort(key=lambda a: a.getDescriptor())
-        self.moveHs()
-    
-        for a in self.atoms:
-            a.sortingLabel = 2
 
     def getFormula(self):
         """
@@ -1912,13 +1895,3 @@ class Molecule(Graph):
         self.multiplicity = 1
 
         return added
-
-    def updateAtomConnectivityValues(self):
-        """
-        Update the connectivity values for each atom in the molecule.
-        """
-        cython.declare(atom=Atom, value=int, connectivityValues=list)
-
-        connectivityValues = self.update_recurse([atom.number * len(atom.bonds) for atom in self.atoms], 0)
-        for atom, value in zip(self.atoms, connectivityValues):
-            atom.connectivity = value

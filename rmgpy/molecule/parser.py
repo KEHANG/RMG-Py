@@ -392,7 +392,7 @@ def fromAugmentedInChI(mol, aug_inchi):
 
     # unsaturated bond to triplet conversion
     # sort the atoms so that they adopt the order of RMG's algorithm, which was used for the u indices:
-    mol.sortAtoms()
+    sortAtoms(mol)
     correct = check_number_unpaired_electrons(mol)
 
     unsaturated = isUnsaturated(mol)
@@ -410,7 +410,7 @@ def fromAugmentedInChI(mol, aug_inchi):
         unsaturated = isUnsaturated(mol)
 
     check(mol, aug_inchi)
-    mol.sortAtoms()
+    sortAtoms(mol)
     return mol
 
 def fromSMILES(mol, smilesstr, backend='try-all'):
@@ -613,7 +613,7 @@ def toOBMol(mol):
 
     # Sort the atoms before converting to ensure output is consistent
     # between different runs
-    mol.sortAtoms()
+    sortAtoms(mol)
 
     atoms = mol.vertices
 
@@ -657,7 +657,7 @@ def toRDKitMol(mol, removeHs=True, returnMapping=False, sanitize=True):
                    
     # Sort the atoms before converting to ensure output is consistent
     # between different runs
-    mol.sortAtoms()
+    sortAtoms(mol)
     atoms = mol.vertices
     rdAtomIndices = {} # dictionary of RDKit atom indices
     rdkitmol = Chem.rdchem.EditableMol(Chem.rdchem.Mol())
@@ -822,3 +822,67 @@ def fixZwitter(mol):
                         at.radicalElectrons = 0
                         atom2.radicalElectrons = 1
                         break
+
+def moveHs(mol):
+    """
+    Sorts the list of atoms so that heavy atoms always come before H atoms.
+    """
+
+    atoms = mol.atoms
+    heavy_atom_count = sum([1 for at in atoms if at.number != 1])
+    i = 0
+    while True:# continue until the atoms are ordered
+        # search for a (H,nonH) pair and switch:
+
+        # search for H-atom in 0 < i < heavy atom count:
+        while i < heavy_atom_count:
+            if atoms[i].number != 1:
+                i += 1 # increase and go to next
+                continue # ignore heavy atoms
+            h_index = i
+
+            # search for non-H atom in i < j < atom count:
+            j = i + 1
+            while j < len(atoms):
+                if atoms[j].number == 1:
+                    h_index = j
+                    j += 1
+                else:# we have found a (H, nonH) pair
+                    non_h_index = j
+                    atoms[h_index], atoms[non_h_index] = atoms[non_h_index], atoms[h_index]
+                    break
+
+            break
+
+        if i == heavy_atom_count:#all atoms are ordered.
+            break
+
+    mol.atoms = atoms
+
+def updateAtomConnectivityValues(mol):
+    """
+    Update the connectivity values for each atom in the molecule.
+    """
+    cython.declare(atom=Atom, value=int, connectivityValues=list)
+
+    connectivityValues = mol.update_recurse([atom.number * len(atom.bonds) for atom in mol.atoms], 0)
+    for atom, value in zip(mol.atoms, connectivityValues):
+        atom.connectivity = value
+
+def sortAtoms(mol):
+    """
+    Sort the atoms in the graph. This can make certain operations, e.g.
+    the isomorphism functions, much more efficient.
+    """
+    cython.declare(a=Atom)
+    for a in mol.atoms:
+        if a.sortingLabel != 2: break
+    else:
+        return
+        
+    updateAtomConnectivityValues(mol)
+    mol.atoms.sort(key=lambda a: a.getDescriptor())
+    moveHs(mol)
+
+    for a in mol.atoms:
+        a.sortingLabel = 2

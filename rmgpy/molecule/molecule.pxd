@@ -125,8 +125,6 @@ cdef class Molecule(Graph):
 
     cpdef removeBond(self, Bond bond)
 
-    cpdef sortAtoms(self)
-
     cpdef str getFormula(self)
 
     cpdef short getRadicalCount(self)
@@ -210,5 +208,3 @@ cdef class Molecule(Graph):
     cpdef findAllDelocalizationPathsN5dd_N5ts(self, Atom atom1)
 
     cpdef int calculateSymmetryNumber(self) except -1
-    
-    cpdef updateAtomConnectivityValues(self)
