@@ -701,14 +701,18 @@ class Molecule(Graph):
         Sort the atoms in the graph. This can make certain operations, e.g.
         the isomorphism functions, much more efficient.
         """
-        cython.declare(a=Atom, index=int)
+        cython.declare(a=Atom)
         for a in self.atoms:
-            if a.sortingLabel < 0:
-                self.updateAtomConnectivityValues()
-                break
+            if a.sortingLabel != 2: break
+        else:
+            return
+            
+        self.updateAtomConnectivityValues()
         self.atoms.sort(key=lambda a: a.getDescriptor())
-        for index, a in enumerate(self.atoms):
-            a.sortingLabel = index
+        self.moveHs()
+    
+        for a in self.atoms:
+            a.sortingLabel = 2
 
     def getFormula(self):
         """

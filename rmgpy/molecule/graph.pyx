@@ -432,22 +432,20 @@ cdef class Graph:
         the isomorphism functions, much more efficient.
         """
         cdef Vertex vertex
-        cdef int index, value
         cdef list connectivityValues
-
+        
         # Only need to conduct sort if there is an invalid sorting label on any vertex
         for vertex in self.vertices:
-            if vertex.sortingLabel < 0: break
+            if vertex.sortingLabel != 1: break
         else:
-            self.vertices.sort(key=getVertexSortingLabel)
             return
         # If we need to sort then let's also update the connecitivities so
         # we're sure they are right, since the sorting labels depend on them
         self.updateConnectivityValues()
 
         self.vertices.sort(key=getVertexConnectivityValue)
-        for index, vertex in enumerate(self.vertices):
-            vertex.sortingLabel = index
+        for vertex in self.vertices:
+            vertex.sortingLabel = 1
 
     cpdef bint isIsomorphic(self, Graph other, dict initialMap=None) except -2:
         """

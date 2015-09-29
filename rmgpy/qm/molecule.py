@@ -140,8 +140,8 @@ class Geometry:
 
     def saveCoordinatesFromRDMol(self, rdmol, minEid, rdAtIdx):
         # Save xyz coordinates on each atom in molecule ****
-        for atom in self.molecule.atoms:
-            point = rdmol.GetConformer(minEid).GetAtomPosition(atom.sortingLabel)
+        for index, atom in enumerate(self.molecule.atoms):
+            point = rdmol.GetConformer(minEid).GetAtomPosition(index)
             atom.coords = numpy.array([point.x, point.y, point.z])
     
     def saveCoordinatesFromQMData(self, qmdata):

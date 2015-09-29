@@ -260,7 +260,7 @@ class TestGraph(unittest.TestCase):
         self.graph.updateConnectivityValues()
         self.graph.sortVertices()
         for vertex1, vertex2 in zip(self.graph.vertices[:-1], self.graph.vertices[1:]):
-            self.assertTrue(vertex1.sortingLabel < vertex2.sortingLabel)
+            self.assertTrue(self.graph.vertices.index(vertex1) < self.graph.vertices.index(vertex2))
             self.assertTrue(vertex1.connectivity >= vertex2.connectivity)
     
     def test_vertex_connectivity_values(self):
