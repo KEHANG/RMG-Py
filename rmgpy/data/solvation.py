@@ -762,7 +762,7 @@ class SolvationDatabase(object):
         # For thermo estimation we need the atoms to already be sorted because we
         # iterate over them; if the order changes during the iteration then we
         # will probably not visit the right atoms, and so will get the thermo wrong
-        molecule.sortAtoms()
+        molecule.sortVertices()
 
         # Create the SoluteData object with the intercepts from the Platts groups
         soluteData = SoluteData(
