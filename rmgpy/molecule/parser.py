@@ -370,7 +370,6 @@ def fromAugmentedInChI(mol, aug_inchi):
 
     mol.multiplicity = aug_inchi.mult
 
-
     #triplet to singlet conversion
     if mol.multiplicity == 1 and mol.getNumberOfRadicalElectrons() == 2:
         for at in mol.atoms:
@@ -715,6 +714,46 @@ def createULayer(mol):
 
     Returns None if the molecule bears less than 2 unpaired electrons
     """
+
+    if mol.getRadicalCount() == 0:
+        return None
+    elif mol.getFormula() == 'H':
+        return U_LAYER_PREFIX+str(1)
+
+    # remove hydrogens
+    hydrogens = [at for at in mol.atoms if at.number == 1]
+    [mol.removeAtom(h) for h in hydrogens]
+            
+    # sort the atoms based on the inchi canonicalization algorithm
+    m = toRDKitMol(mol)
+
+    # generate inchi and auxiliary info
+    inchi , auxinfo = Chem.MolToInchiAndAuxInfo(m)
+
+    # extract the atom numbers
+    pieces = auxinfo.split('/')
+    original_atom_numbers = None
+    for piece in pieces:
+        if piece.startswith('N'):
+            original_atom_numbers = piece
+            break
+
+    assert original_atom_numbers is not None, "inchi: {}, {}".format(inchi, auxinfo)
+    """
+    definition of N-list: 
+
+    The original number of an atom with identification number n is given as the
+    n-th member of this list for a component; the lists are separated with “;”. 
+    """
+    Nlist = map(int, original_atom_numbers[2:].split(','))
+    new_indices = [Nlist.index(i+1) for i,atom in enumerate(mol.atoms)]
+
+    # sort the atoms based on the new inchi order
+    mol.atoms = [x for (y,x) in sorted(zip(new_indices,mol.atoms), key=lambda pair: pair[0])]
+
+    # find the resonance isomer with the lowest u index:
+    mol = normalize(mol)
+
     ulayer = [str(i+1) for i, at in enumerate(mol.atoms) if at.radicalElectrons > 0]
     if ulayer:
         return (U_LAYER_PREFIX + ','.join(ulayer))
@@ -730,10 +769,9 @@ def toAugmentedInChI(mol):
     Separate layer with a forward slash character.
     """
     mol_copy = mol.copy(deep=True)
-    mol_copy = normalize(mol_copy)
     inchi = toInChI(mol_copy)
-
     mult = createMultiplicityLayer(mol_copy.multiplicity)    
+
     ulayer = createULayer(mol_copy)
 
     return compose_aug_inchi(inchi, mult, ulayer)
