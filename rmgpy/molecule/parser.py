@@ -3,7 +3,6 @@
 import cython
 import logging
 import itertools
-from copy import deepcopy
 
 # local imports
 try:
@@ -738,11 +737,12 @@ def toAugmentedInChI(mol):
     
     Separate layer with a forward slash character.
     """
-    mol = deepcopy(mol)
-    inchi = toInChI(mol)
+    mol_copy = mol.copy(deep=True)
+    sortAtoms(mol_copy)
+    inchi = toInChI(mol_copy)
 
-    mult = createMultiplicityLayer(mol.multiplicity)    
-    ulayer = createULayer(mol)
+    mult = createMultiplicityLayer(mol_copy.multiplicity)    
+    ulayer = createULayer(mol_copy)
 
     return compose_aug_inchi(inchi, mult, ulayer)
 
