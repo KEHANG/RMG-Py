@@ -76,8 +76,6 @@ cpdef str createMultiplicityLayer(int multiplicity)
 
 cpdef fixZwitter(Molecule mol)
 
-cpdef sortAtoms(Molecule mol)
-
 cpdef moveHs(Molecule mol)
 
 cpdef updateAtomConnectivityValues(Molecule mol)

@@ -391,8 +391,6 @@ def fromAugmentedInChI(mol, aug_inchi):
 
 
     # unsaturated bond to triplet conversion
-    # sort the atoms so that they adopt the order of RMG's algorithm, which was used for the u indices:
-    sortAtoms(mol)
     correct = check_number_unpaired_electrons(mol)
 
     unsaturated = isUnsaturated(mol)
@@ -410,7 +408,6 @@ def fromAugmentedInChI(mol, aug_inchi):
         unsaturated = isUnsaturated(mol)
 
     check(mol, aug_inchi)
-    sortAtoms(mol)
     return mol
 
 def fromSMILES(mol, smilesstr, backend='try-all'):
@@ -545,7 +542,9 @@ def fromOBMol(mol, obmol):
 
     
     # Set atom types and connectivity values
-    mol.update()
+    mol.updateConnectivityValues()
+    mol.updateAtomTypes()
+    mol.updateMultiplicity()
     mol.updateLonePairs()
     
     # Assume this is always true
@@ -611,10 +610,6 @@ def toOBMol(mol):
     # cython.declare(atom=Atom, atom1=Atom, bonds=dict, atom2=Atom, bond=Bond)
     # cython.declare(index1=cython.int, index2=cython.int, order=cython.int)
 
-    # Sort the atoms before converting to ensure output is consistent
-    # between different runs
-    sortAtoms(mol)
-
     atoms = mol.vertices
 
     obmol = openbabel.OBMol()
@@ -655,9 +650,6 @@ def toRDKitMol(mol, removeHs=True, returnMapping=False, sanitize=True):
                    index2=cython.int,
                    )
                    
-    # Sort the atoms before converting to ensure output is consistent
-    # between different runs
-    sortAtoms(mol)
     atoms = mol.vertices
     rdAtomIndices = {} # dictionary of RDKit atom indices
     rdkitmol = Chem.rdchem.EditableMol(Chem.rdchem.Mol())
@@ -739,7 +731,6 @@ def toAugmentedInChI(mol):
     """
     mol_copy = mol.copy(deep=True)
     mol_copy = normalize(mol_copy)
-    sortAtoms(mol_copy)
     inchi = toInChI(mol_copy)
 
     mult = createMultiplicityLayer(mol_copy.multiplicity)    
@@ -871,24 +862,6 @@ def updateAtomConnectivityValues(mol):
     connectivityValues = mol.update_recurse([atom.number * len(atom.bonds) for atom in mol.atoms], 0)
     for atom, value in zip(mol.atoms, connectivityValues):
         atom.connectivity = value
-
-def sortAtoms(mol):
-    """
-    Sort the atoms in the graph. This can make certain operations, e.g.
-    the isomorphism functions, much more efficient.
-    """
-    cython.declare(a=Atom)
-    for a in mol.atoms:
-        if a.sortingLabel != 2: break
-    else:
-        return
-        
-    updateAtomConnectivityValues(mol)
-    mol.atoms.sort(key=lambda a: a.getDescriptor())
-    moveHs(mol)
-
-    for a in mol.atoms:
-        a.sortingLabel = 2
 
 def normalize(mol):
     """
