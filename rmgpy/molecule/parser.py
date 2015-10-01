@@ -738,6 +738,7 @@ def toAugmentedInChI(mol):
     Separate layer with a forward slash character.
     """
     mol_copy = mol.copy(deep=True)
+    mol_copy = normalize(mol_copy)
     sortAtoms(mol_copy)
     inchi = toInChI(mol_copy)
 
@@ -888,3 +889,67 @@ def sortAtoms(mol):
 
     for a in mol.atoms:
         a.sortingLabel = 2
+
+def normalize(mol):
+    """
+    Select the resonance isomer that is isomorphic to the parameter isomer, with the lowest unpaired
+    electrons descriptor.
+
+    We generate over all resonance isomers (non-isomorphic as well as isomorphic) and add isomorphic
+    isomers to a list (candidates).
+
+    Next, we search through this list and return the candidate with the lowest unpaired electrons descriptor.
+
+    """
+    candidates = [mol]# resonance isomers that are isomorphic to the parameter isomer.
+
+    isomers = [mol]
+
+    # Iterate over resonance isomers
+    index = 0
+    while index < len(isomers):
+        isomer = isomers[index]
+            
+        newIsomers = isomer.getAdjacentResonanceIsomers()
+        newIsomers += isomer.getLonePairRadicalResonanceIsomers()
+        newIsomers += isomer.getN5dd_N5tsResonanceIsomers()
+        newIsomers += isomer.getKekulizedResonanceIsomers()
+
+        for newIsomer in newIsomers:
+            newIsomer.updateAtomTypes()
+            # Append to isomer list if unique
+            for isom in isomers:
+                isom_copy = isom.copy(deep=True)
+                newIsomer_copy = newIsomer.copy(deep=True)
+                if isom_copy.isIsomorphic(newIsomer_copy):
+                    candidates.append(newIsomer)
+                    break
+            else:
+                isomers.append(newIsomer)        
+                    
+        # Move to next resonance isomer
+        index += 1
+    
+    current_minimum = candidates[0]#isomer with the smallest u-layer descriptor.
+    unpaired_electrons_current_minimum = get_unpaired_electrons(current_minimum)
+    for cand in candidates[1:]:
+       unpaired_electrons_candidate = get_unpaired_electrons(cand)
+       if unpaired_electrons_candidate < unpaired_electrons_current_minimum:
+            current_minimum = cand
+            unpaired_electrons_current_minimum = unpaired_electrons_candidate
+
+
+    return current_minimum
+
+
+def get_unpaired_electrons(mol):
+    """
+    returns a sorted list of the indices of the atoms that bear one or more 
+    unpaired electrons.
+    """
+    locations = []
+    for index, at in enumerate(mol.atoms):
+        if at.radicalElectrons >= 1:
+            locations.append(index)
+
+    return sorted(locations)
