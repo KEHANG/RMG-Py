@@ -75,3 +75,13 @@ cpdef str toAugmentedInChIKey(Molecule mol)
 cpdef str createMultiplicityLayer(int multiplicity)
 
 cpdef fixZwitter(Molecule mol)
+
+cpdef sortAtoms(Molecule mol)
+
+cpdef moveHs(Molecule mol)
+
+cpdef updateAtomConnectivityValues(Molecule mol)
+
+cpdef Molecule normalize(Molecule mol)
+
+cpdef list get_unpaired_electrons(Molecule mol)
