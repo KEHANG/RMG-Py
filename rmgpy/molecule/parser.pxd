@@ -74,7 +74,7 @@ cpdef str toAugmentedInChIKey(Molecule mol)
 
 cpdef str createMultiplicityLayer(int multiplicity)
 
-cpdef fixZwitter(Molecule mol)
+cpdef fixCharge(Molecule mol, list u_indices)
 
 cpdef moveHs(Molecule mol)
 
