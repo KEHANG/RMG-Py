@@ -314,7 +314,7 @@ class RMG:
             shared.setConst(database_forbiddenStructures = database.forbiddenStructures)
             logging.info("Done broadcasting.")
     
-    def initialize(self, args):
+    def initialize(self, args, rootSpeciesDict):
         """
         Initialize an RMG job using the command-line arguments `args` as returned
         by the :mod:`argparse` package.
@@ -461,7 +461,7 @@ class RMG:
                     self.reactionModel.enlarge(spec)
             for spec in self.initialSpecies:
                 if spec.reactive:
-                    self.reactionModel.enlarge(spec)
+                    self.reactionModel.enlarge(spec, self.parallelMode, rootSpeciesDict)
             
             # Save a restart file if desired
             if self.saveRestartPeriod:
@@ -472,8 +472,8 @@ class RMG:
         Execute an RMG job using the command-line arguments `args` as returned
         by the :mod:`argparse` package.
         """
-    
-        self.initialize(args)
+        rootSpeciesDict={}
+        self.initialize(args, rootSpeciesDict)
         
         # RMG execution statistics
         coreSpeciesCount = []
@@ -486,10 +486,6 @@ class RMG:
 
         self.done = False
         self.saveEverything()
-        rootSpeciesDict={}
-        for corespecies in self.reactionModel.core.species:
-            if corespecies.reactive:
-                rootSpeciesDict[corespecies.index] = corespecies
         # Main RMG loop
         while not self.done:
                 
