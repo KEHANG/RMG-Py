@@ -467,7 +467,7 @@ class Reaction:
         Return the enthalpy of reaction in J/mol evaluated at temperature
         `T` in K.
         """
-        cython.declare(dHrxn=cython.double, reactant=Species, product=Species)
+        cython.declare(dHrxn=cython.double)
         dHrxn = 0.0
         import rmgpy.thermo.thermoengine
         thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
@@ -482,7 +482,7 @@ class Reaction:
         Return the entropy of reaction in J/mol*K evaluated at temperature `T`
         in K.
         """
-        cython.declare(dSrxn=cython.double, reactant=Species, product=Species)
+        cython.declare(dSrxn=cython.double)
         dSrxn = 0.0
         import rmgpy.thermo.thermoengine
         thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
@@ -497,7 +497,7 @@ class Reaction:
         Return the Gibbs free energy of reaction in J/mol evaluated at
         temperature `T` in K.
         """
-        cython.declare(dGrxn=cython.double, reactant=Species, product=Species)
+        cython.declare(dGrxn=cython.double)
         dGrxn = 0.0
         import rmgpy.thermo.thermoengine
         thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
