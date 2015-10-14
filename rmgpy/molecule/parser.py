@@ -490,6 +490,7 @@ def fromAugmentedInChI(mol, aug_inchi):
         unsaturated = isUnsaturated(mol)
 
     check(mol, aug_inchi)
+    mol.updateAtomTypes()
     return mol
 
 def fromSMILES(mol, smilesstr, backend='try-all'):
