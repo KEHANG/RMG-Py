@@ -129,7 +129,7 @@ def convert_unsaturated_bond_to_biradical(mol, inchi, u_indices):
                     4) add unpaired electrons to central carbon and original O.
 
                 """
-                if all_mobile_h_atoms_couples is not []:
+                if all_mobile_h_atoms_couples:
                     #find central atom:
                     central, original_atom, new_partner = find_mobile_h_system(mol, 
                         all_mobile_h_atoms_couples, [u1, u2])
@@ -446,7 +446,7 @@ def fromAugmentedInChI(mol, aug_inchi):
                 at.lonePairs = 1
                 at.radicalElectrons = 0
 
-    indices = aug_inchi.u_indices[:] if aug_inchi.u_indices is not None else None
+    indices = aug_inchi.u_indices[:] if aug_inchi.u_indices is not None else []
     c = Counter(indices)
     for k,v in c.iteritems():
         atom = mol.atoms[k - 1]
@@ -910,6 +910,9 @@ def fixCharge(mol, u_indices):
     unpaired electron.
 
     """
+    if not u_indices:
+        return
+
     # converting charges to unpaired electrons for atoms in the u-layer
     for at in mol.atoms:
         if at.charge != 0 and (mol.atoms.index(at) + 1) in u_indices:
@@ -1136,7 +1139,7 @@ def find_4_atom_3_bond_path(start, end):
         else:#none of the neighbors is the end atom.
             # Add a new allyl path and try again:
             new_paths = find_allyl_paths(path)
-            [q.put(p) if p is not [] else '' for p in new_paths]
+            [q.put(p) if p else '' for p in new_paths]
 
     # Could not find a resonance path from start atom to end atom
     return None
@@ -1207,7 +1210,7 @@ def find_4_atom_3_bond_end_with_charge_path(start):
         else:#none of the neighbors is the end atom.
             # Add a new allyl path and try again:
             new_paths = find_allyl_paths(path)
-            [q.put(p) if p is not [] else '' for p in new_paths]
+            [q.put(p) if p else '' for p in new_paths]
 
     # Could not find a resonance path from start atom to end atom
     return None
@@ -1218,15 +1221,15 @@ def find_3_atom_2_bond_end_with_charge_path(start):
     alternating non-single and single bonds and ends with a charged atom.
 
     Returns a list with atom and bond elements from start to end, or
-    None if nothing was found.
+    an empty list if nothing was found.
     """
     paths = []
 
     q = Queue()#FIFO queue of paths that need to be analyzed
     unsaturated_bonds = find_unsaturated_bond_paths([start])
     
-    if unsaturated_bonds is []:
-        return None
+    if not unsaturated_bonds:
+        return []
     
     [q.put(path) for path in unsaturated_bonds]
 
@@ -1246,7 +1249,7 @@ def find_3_atom_2_bond_end_with_charge_path(start):
         else:#none of the neighbors is the end atom.
             # Add a new inverse allyl path and try again:
             new_paths = find_inverse_allyl_paths(path)
-            [q.put(p) if p is not [] else '' for p in new_paths]
+            [q.put(p) if p else '' for p in new_paths]
 
     # Could not find a resonance path from start atom to end atom
     return paths
@@ -1446,7 +1449,7 @@ def find_lowest_u_layer(mol, u_layer, equivalent_atoms):
         return u_layer
 
     
-    if equivalent_atoms is []:
+    if not equivalent_atoms:
         return u_layer
 
     new_u_layer = []
