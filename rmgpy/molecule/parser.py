@@ -1440,7 +1440,11 @@ def valid_combo(combo, mol):
 
     assert len(combo) == 2
     at1, at2 = mol.atoms[combo[0]-1], mol.atoms[combo[1]-1]
-    return mol.hasBond(at1, at2)
+    conditions = []
+    conditions.append(mol.hasBond(at1, at2))
+    conditions.append(all([at.radicalElectrons == 0 for at in [at1, at2]]))
+    
+    return all(conditions)
 
 def find_lowest_u_layer(mol, u_layer, equivalent_atoms):
     """..."""
