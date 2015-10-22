@@ -1509,11 +1509,14 @@ def valid_combo(combo, mol):
     atoms that are adjacent in the molecule.
     """
 
-    assert len(combo) == 2
-    at1, at2 = mol.atoms[combo[0]-1], mol.atoms[combo[1]-1]
+    assert len(combo) < 3
+    atoms = [mol.atoms[index-1] for index in combo]
+
     conditions = []
-    conditions.append(mol.hasBond(at1, at2))
-    conditions.append(all([at.radicalElectrons == 0 for at in [at1, at2]]))
+    conditions.append(any([at.radicalElectrons == 0 for at in atoms]))
+    if len(atoms) == 2:
+        at1, at2 = atoms
+        conditions.append(mol.hasBond(at1, at2))
     
     return all(conditions)
 
