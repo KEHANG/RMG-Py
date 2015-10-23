@@ -52,6 +52,7 @@ from .group import GroupAtom, GroupBond, Group, ActionError
 from .atomtype import AtomType, atomTypes, getAtomType
 import rmgpy.constants as constants
 import rmgpy.molecule.parser as parser
+import rmgpy.molecule.generator as generator
 
 
 
@@ -1235,7 +1236,7 @@ class Molecule(Graph):
         Convert a molecular structure to an InChI string. Uses
         `OpenBabel <http://openbabel.org/>`_ to perform the conversion.
         """
-        return parser.toInChI(self)            
+        return generator.toInChI(self)            
         
     def toAugmentedInChI(self):
         """
@@ -1244,7 +1245,7 @@ class Molecule(Graph):
         
         Separate layer with a forward slash character.
         """
-        return parser.toAugmentedInChI(self)
+        return generator.toAugmentedInChI(self)
         
     
     def toInChIKey(self):
@@ -1260,7 +1261,7 @@ class Molecule(Graph):
         Removes check-sum dash (-) and character so that only 
         the 14 + 9 characters remain.
         """
-        return parser.toInChIKey(self)
+        return generator.toInChIKey(self)
     
     def toAugmentedInChIKey(self):
         """
@@ -1270,7 +1271,7 @@ class Molecule(Graph):
         Simply append the multiplicity string, do not separate by a
         character like forward slash.
         """
-        return parser.toAugmentedInChIKey(self)
+        return generator.toAugmentedInChIKey(self)
     
 
     def toSMARTS(self):
@@ -1279,7 +1280,7 @@ class Molecule(Graph):
         `RDKit <http://rdkit.org/>`_ to perform the conversion.
         Perceives aromaticity and removes Hydrogen atoms.
         """
-        return parser.toSMARTS(self)
+        return generator.toSMARTS(self)
     
     
     def toSMILES(self):
@@ -1296,13 +1297,13 @@ class Molecule(Graph):
         and removes Hydrogen atoms.
         """
         
-        return parser.toSMILES(self)
+        return generator.toSMILES(self)
 
     def toRDKitMol(self, *args, **kwargs):
         """
         Convert a molecular structure to a RDKit rdmol object.
         """
-        return parser.toRDKitMol(self, *args, **kwargs)
+        return generator.toRDKitMol(self, *args, **kwargs)
 
     def toAdjacencyList(self, label='', removeH=False, removeLonePairs=False, oldStyle=False):
         """
@@ -1677,7 +1678,7 @@ class Molecule(Graph):
         if self.isCyclic():
             molecule = self.copy(deep=True)
             try:
-                rdkitmol, rdAtomIndices = parser.toRDKitMol(molecule, removeHs=False, returnMapping=True)
+                rdkitmol, rdAtomIndices = generator.toRDKitMol(molecule, removeHs=False, returnMapping=True)
             except:
                 return []
             aromatic = False
@@ -1718,7 +1719,7 @@ class Molecule(Graph):
         else:
             return isomers
         
-        rdkitmol = parser.toRDKitMol(self)  # This perceives aromaticity
+        rdkitmol = generator.toRDKitMol(self)  # This perceives aromaticity
         mol = Molecule()
         isomers.append(parser.fromRDKitMol(mol, rdkitmol))  # This step Kekulizes the molecule
         return isomers
