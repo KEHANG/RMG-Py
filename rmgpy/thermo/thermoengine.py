@@ -149,6 +149,7 @@ def evaluator(aug_inchi):
     from rmgpy.rmg.model import Species
 
     spc = Species(molecule=[Molecule().fromAugmentedInChI(aug_inchi)])
+    spc.generateResonanceIsomers()
     thermo = generateThermoData(spc)
     transportData = generateTransportData(spc)
 
