@@ -110,19 +110,30 @@ def find_allyl_end_with_charge(start):
     # Could not find a resonance path from start atom to end atom
     return paths
 
-def find_shortest_path(start, end, path=[]):
-    path = path + [start]
-    if start == end:
-        return path
+def find_shortest_path(start, end):
+    agenda = [[start]]
+    extended_set = set()
 
-    shortest = None
-    for node,_ in start.bonds.iteritems():
-        if node not in path:
-            newpath = find_shortest_path(node, end, path)
-            if newpath:
-                if not shortest or len(newpath) < len(shortest):
-                    shortest = newpath
-    return shortest
+    while(agenda):
+        path = agenda.pop(0)
+        lastNode = path[-1]
+
+        if(lastNode == end):
+            return path
+        elif lastNode in extended_set:
+            continue
+        else:
+            extended_set.add(lastNode)
+            new_paths = []
+            for node,_ in lastNode.bonds.iteritems():
+                if node not in path:
+                    path_copy = path[:] + [node]
+                    new_paths.append(path_copy)
+            agenda = agenda + new_paths
+            agenda = sorted(agenda, key=lambda path: len(path))
+
+    # should always find a shortest path
+    raise Exception("Invalid start atom or end atom!")
 
 def add_unsaturated_bonds(path):
     """
