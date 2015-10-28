@@ -671,14 +671,7 @@ def fixCharge(mol, u_indices):
             
         continue # to next index in u-layer
 
-    # fix adjacent charges
-    for at in mol.atoms:
-        if at.charge != 0:
-            for neigh, bond in at.bonds.iteritems():
-                if neigh.charge != 0:
-                    bond.incrementOrder()
-                    at.charge += 1 if at.charge < 0 else -1
-                    neigh.charge += 1 if neigh.charge < 0 else -1
+    fix_adjacent_charges(mol)
 
 def find_mobile_h_system(mol, all_mobile_h_atoms_couples, test_indices):
     dummy = test_indices[:]
@@ -709,3 +702,17 @@ def check_bond_order_oxygen(mol):
 
     return True
     
+def fix_adjacent_charges(mol):
+    """
+    Searches for pairs of charged atoms.
+    Neutralizes one unit of charge on each atom,
+    and increments the bond order of the bond in between
+    the atoms.
+    """
+    for at in mol.atoms:
+        if at.charge != 0:
+            for neigh, bond in at.bonds.iteritems():
+                if neigh.charge != 0:
+                    bond.incrementOrder()
+                    at.charge += 1 if at.charge < 0 else -1
+                    neigh.charge += 1 if neigh.charge < 0 else -1
