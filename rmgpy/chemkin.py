@@ -1713,16 +1713,18 @@ def saveSpeciesDictionary(path, species, oldStyle=False):
     """
     with open(path, 'w') as f:
         for spec in species:
-            if oldStyle:
-                try:
-                    f.write(spec.molecule[0].toAdjacencyList(label=getSpeciesIdentifier(spec), removeH=True, oldStyle=True))
+            aug_inchi = spec.getAugmentedInChI()
+            mol = Molecule().fromAugmentedInChI(aug_inchi)
+            if oldStyle:                
+                try:                    
+                    f.write(mol.toAdjacencyList(label=getSpeciesIdentifier(spec), removeH=True, oldStyle=True))
                 except:
-                    newAdjList = spec.molecule[0].toAdjacencyList(label=getSpeciesIdentifier(spec), removeH=False)
+                    newAdjList = mol.toAdjacencyList(label=getSpeciesIdentifier(spec), removeH=False)
                     f.write("// Couldn't save {0} in old RMG-Java syntax, but here it is in newer RMG-Py syntax:".format(getSpeciesIdentifier(spec)))
                     f.write("\n// " + "\n// ".join(newAdjList.splitlines()) + '\n')
             else:
                 try:
-                    f.write(spec.molecule[0].toAdjacencyList(label=getSpeciesIdentifier(spec), removeH=False))
+                    f.write(mol.toAdjacencyList(label=getSpeciesIdentifier(spec), removeH=False))
                 except:
                     raise ChemkinError('Ran into error saving dictionary for species {0}. Please check your files.'.format(getSpeciesIdentifier(spec)))
             f.write('\n')
