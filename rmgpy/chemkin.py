@@ -1273,8 +1273,9 @@ def getSpeciesIdentifier(species):
     """
     label = species.label
     # Special case for inert colliders - just use the label if possible
-    if not species.reactive and 0 < len(label) <= 10:
-        return label
+    if hasattr(species, 'reactive'):
+        if not species.reactive and 0 < len(label) <= 10:
+            return label
 
     # The algorithm is slightly different depending on whether or not the
     # species has an index
