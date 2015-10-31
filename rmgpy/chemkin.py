@@ -1293,9 +1293,10 @@ def getSpeciesIdentifier(species):
                 return label
         else:
             # try the chemical formula if the species label is not present
-            if len(species.molecule) > 0:
-                # Try the chemical formula
-                return '{0}'.format(species.molecule[0].getFormula())
+            # Try the chemical formula
+            aug_inchi = species.getAugmentedInChI()
+            formula = aug_inchi.split('/')[1]
+            return '{0}'.format(formula)
     else:
         
         # Index present - the index will be included in the identifier
@@ -1309,11 +1310,12 @@ def getSpeciesIdentifier(species):
                 return name
     
         # Next try the chemical formula
-        if len(species.molecule) > 0:
-            # Try the chemical formula
-            name = '{0}({1:d})'.format(species.molecule[0].getFormula(), species.index)
-            if len(name) <= 10:
-                return name
+        aug_inchi = species.getAugmentedInChI()
+        formula = aug_inchi.split('/')[1]
+        # Try the chemical formula
+        name = '{0}({1:d})'.format(formula, species.index)
+        if len(name) <= 10:
+            return name
     
         # As a last resort, just use the index
         if species.index >= 0:
