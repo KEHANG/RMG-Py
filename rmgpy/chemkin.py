@@ -40,7 +40,7 @@ import numpy
 import rmgpy.kinetics as _kinetics
 from rmgpy.reaction import Reaction
 #from species import Species
-from rmgpy.rmg.model import Species
+from rmgpy.rmg.model import Species, InChISpecies
 from rmgpy.rmg.pdep import PDepReaction
 from rmgpy.thermo import NASAPolynomial, NASA
 import rmgpy.constants as constants
@@ -1336,8 +1336,9 @@ def writeThermoEntry(species, verbose = True):
     To use this method you must have exactly two NASA polynomials in your
     model, and you must use the seven-coefficient forms for each.
     """
-
-    thermo = species.thermo
+    import rmgpy.thermo.thermoengine
+    thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
+    thermo = thermo_engine.get_thermo(species.getAugmentedInChI())
     if not isinstance(thermo, NASA):
         return ''
         raise ChemkinError('Cannot generate Chemkin string for species "{0}": Thermodynamics data must be a NASA object.'.format(species))
@@ -1350,7 +1351,15 @@ def writeThermoEntry(species, verbose = True):
 
     # Determine the number of each type of element in the molecule
     elements = ['C','H','N','O']; elementCounts = [0,0,0,0]
-    for atom in species.molecule[0].atoms:
+    mol = None
+    if isinstance(species, InChISpecies):
+        aug_inchi = species.getAugmentedInChI()
+        mol = Molecule().fromAugmentedInChI(aug_inchi)
+    elif isinstance(species, Species):
+        mol = species.molecule[0]
+    else:
+        raise Exception("This species {} is not InChISpecies or Species!".format(species))
+    for atom in mol.atoms:
         # The atom itself
         symbol = atom.element.symbol
         if symbol not in elements:
