@@ -1751,12 +1751,14 @@ def saveTransportFile(path, species):
     7. After the last number, a comment field can be enclosed in parenthesis.
 
     """
+    import rmgpy.thermo.thermoengine
+    thermo_engine = rmgpy.thermo.thermoengine.thermo_engine
     with open(path, 'w') as f:
         f.write("! {0:15} {1:8} {2:9} {3:9} {4:9} {5:9} {6:9} {7:9}\n".format('Species','Shape', 'LJ-depth', 'LJ-diam', 'DiplMom', 'Polzblty', 'RotRelaxNum','Data'))
         f.write("! {0:15} {1:8} {2:9} {3:9} {4:9} {5:9} {6:9} {7:9}\n".format('Name','Index', 'epsilon/k_B', 'sigma', 'mu', 'alpha', 'Zrot','Source'))
-        for spec in species:            
-            if (not spec.transportData or
-                len(spec.molecule) == 0):
+        for spec in species:
+            transportData = thermo_engine.get_transport(spec.getAugmentedInChI())
+            if (not transportData):
                 missingData = True
             else:
                 missingData = False
@@ -1772,17 +1774,17 @@ def saveTransportFile(path, species):
                 shapeIndex = 2
             
             if missingData:
-                f.write('! {0:19s} {1!r}\n'.format(label, spec.transportData))
+                f.write('! {0:19s} {1!r}\n'.format(label, transportData))
             else:
                 f.write('{0:19} {1:d}   {2:9.3f} {3:9.3f} {4:9.3f} {5:9.3f} {6:9.3f}    ! {7:s}\n'.format(
                     label,
                     shapeIndex,
-                    spec.transportData.epsilon.value_si / constants.R,
-                    spec.transportData.sigma.value_si * 1e10,
-                    (spec.transportData.dipoleMoment.value_si * constants.c * 1e21 if spec.transportData.dipoleMoment else 0),
-                    (spec.transportData.polarizability.value_si * 1e30 if spec.transportData.polarizability else 0),
+                    transportData.epsilon.value_si / constants.R,
+                    transportData.sigma.value_si * 1e10,
+                    (transportData.dipoleMoment.value_si * constants.c * 1e21 if transportData.dipoleMoment else 0),
+                    (transportData.polarizability.value_si * 1e30 if transportData.polarizability else 0),
                     (spec.Zrot.value_si if spec.Zrot else 0),
-                    spec.transportData.comment,
+                    transportData.comment,
                 ))
 
 def saveChemkinFile(path, species, reactions, verbose = True, checkForDuplicates=True):
