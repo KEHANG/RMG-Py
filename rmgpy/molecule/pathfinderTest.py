@@ -102,8 +102,17 @@ class FindButadieneTest(unittest.TestCase):
 
 class FindAllylEndWithChargeTest(unittest.TestCase):
     def test_C2H2O3(self):
-        inchi = "InChI=1S/C2H2O3/c1-5-2(3)4/h1H2"
-        mol = Molecule().fromInChI(inchi)
+        adjlist = """
+1 C u0 p0 c0 {5,D} {6,S} {7,S}
+2 C u0 p0 c0 {3,D} {4,S} {5,S}
+3 O u0 p2 c0 {2,D}
+4 O u0 p3 c-1 {2,S}
+5 O u0 p1 c+1 {1,D} {2,S}
+6 H u0 p0 c0 {1,S}
+7 H u0 p0 c0 {1,S}
+        """
+
+        mol = Molecule().fromAdjacencyList(adjlist)
         start = mol.atoms[2]
         paths = find_allyl_end_with_charge(start)
         idx_path = [[mol.atoms.index(atom)+1 for atom in path[0::2]] for path in paths]
@@ -132,8 +141,18 @@ class FindAllylEndWithChargeTest(unittest.TestCase):
         self.assertEquals(idx_path, expected_idx_path)
 
     def test_C3H2O3(self):
-        inchi = "InChI=1S/C3H2O3/c1-2-3(4)6-5/h1H2"
-        mol = Molecule().fromInChI(inchi)
+        adjlist = """
+1 C u0 p0 c0 {2,D} {7,S} {8,S}
+2 C u0 p0 c0 {1,D} {3,D}
+3 C u0 p0 c0 {2,D} {4,S} {6,S}
+4 O u0 p3 c-1 {3,S}
+5 O u0 p2 c0 {6,D}
+6 O u0 p1 c+1 {3,S} {5,D}
+7 H u0 p0 c0 {1,S}
+8 H u0 p0 c0 {1,S}
+        """
+
+        mol = Molecule().fromAdjacencyList(adjlist)
         start = mol.atoms[1]
         paths = find_allyl_end_with_charge(start)
         idx_paths = [[mol.atoms.index(atom)+1 for atom in path[0::2]] for path in paths]
@@ -164,8 +183,12 @@ class FindAllylEndWithChargeTest(unittest.TestCase):
 
 class FindButadieneEndWithChargeTest(unittest.TestCase):
     def test_CO(self):
-        inchi = "InChI=1S/CO/c1-2"
-        mol = Molecule().fromInChI(inchi)
+        adjlist = """
+1 C u0 p1 c-1 {2,T}
+2 O u0 p1 c+1 {1,T}
+        """
+
+        mol = Molecule().fromAdjacencyList(adjlist)
         start = mol.atoms[0]
         path = find_butadiene_end_with_charge(start)
         idx_path = [mol.atoms.index(atom)+1 for atom in path[0::2]]
@@ -174,8 +197,17 @@ class FindButadieneEndWithChargeTest(unittest.TestCase):
         self.assertEquals(idx_path, expected_idx_path)
 
     def test_C2H2O3(self):
-        inchi = "InChI=1S/C2H2O3/c1-5-2(3)4/h1H2"
-        mol = Molecule().fromInChI(inchi)
+        adjlist = """
+1 C u0 p0 c0 {5,D} {6,S} {7,S}
+2 C u0 p0 c0 {3,D} {4,S} {5,S}
+3 O u0 p2 c0 {2,D}
+4 O u0 p3 c-1 {2,S}
+5 O u0 p1 c+1 {1,D} {2,S}
+6 H u0 p0 c0 {1,S}
+7 H u0 p0 c0 {1,S}
+        """
+
+        mol = Molecule().fromAdjacencyList(adjlist)
         start = mol.atoms[0]
         path = find_butadiene_end_with_charge(start)
         idx_path = [mol.atoms.index(atom)+1 for atom in path[0::2]]
@@ -184,8 +216,18 @@ class FindButadieneEndWithChargeTest(unittest.TestCase):
         self.assertEquals(idx_path, expected_idx_path)
 
     def test_C3H2O3(self):
-        inchi = "InChI=1S/C3H2O3/c1-2-3(4)6-5/h1H2"
-        mol = Molecule().fromInChI(inchi)
+        adjlist = """
+1 C u0 p0 c0 {2,D} {7,S} {8,S}
+2 C u0 p0 c0 {1,D} {3,D}
+3 C u0 p0 c0 {2,D} {4,S} {6,S}
+4 O u0 p3 c-1 {3,S}
+5 O u0 p2 c0 {6,D}
+6 O u0 p1 c+1 {3,S} {5,D}
+7 H u0 p0 c0 {1,S}
+8 H u0 p0 c0 {1,S}
+        """
+
+        mol = Molecule().fromAdjacencyList(adjlist)
         start = mol.atoms[4]
         path = find_butadiene_end_with_charge(start)
         idx_path = [mol.atoms.index(atom)+1 for atom in path[0::2]]
@@ -194,8 +236,21 @@ class FindButadieneEndWithChargeTest(unittest.TestCase):
         self.assertEquals(idx_path, expected_idx_path)
 
     def test_C4H6O(self):
-        inchi = "InChI=1S/C4H6O/c1-2-3-4-5/h2H,3H2,1H3"
-        mol = Molecule().fromInChI(inchi)
+        adjlist = """
+1  C u0 p0 c0 {2,S} {6,S} {7,S} {8,S}
+2  C u0 p1 c-1 {1,S} {3,S} {9,S}
+3  C u0 p0 c0 {2,S} {4,S} {10,S} {11,S}
+4  C u0 p0 c0 {3,S} {5,T}
+5  O u0 p1 c+1 {4,T}
+6  H u0 p0 c0 {1,S}
+7  H u0 p0 c0 {1,S}
+8  H u0 p0 c0 {1,S}
+9  H u0 p0 c0 {2,S}
+10 H u0 p0 c0 {3,S}
+11 H u0 p0 c0 {3,S}
+        """
+
+        mol = Molecule().fromAdjacencyList(adjlist)
         start = mol.atoms[3]
         path = find_butadiene_end_with_charge(start)
         idx_path = [mol.atoms.index(atom)+1 for atom in path[0::2]]
@@ -204,8 +259,22 @@ class FindButadieneEndWithChargeTest(unittest.TestCase):
         self.assertEquals(idx_path, expected_idx_path)
 
     def test_C5H6O_2(self):
-        inchi = "InChI=1S/C5H6O/c1-5-3-2-4-6-5/h2-5H,1H2"
-        mol = Molecule().fromInChI(inchi)
+        adjlist = """
+1  C u0 p1 c-1 {5,S} {7,S} {8,S}
+2  C u0 p0 c0 {3,D} {4,S} {9,S}
+3  C u0 p0 c0 {2,D} {5,S} {10,S}
+4  C u0 p0 c0 {2,S} {6,D} {11,S}
+5  C u0 p0 c0 {1,S} {3,S} {6,S} {12,S}
+6  O u0 p1 c+1 {4,D} {5,S}
+7  H u0 p0 c0 {1,S}
+8  H u0 p0 c0 {1,S}
+9  H u0 p0 c0 {2,S}
+10 H u0 p0 c0 {3,S}
+11 H u0 p0 c0 {4,S}
+12 H u0 p0 c0 {5,S}
+        """
+
+        mol = Molecule().fromAdjacencyList(adjlist)
         start = mol.atoms[2]
         path = find_butadiene_end_with_charge(start)
         idx_path = [mol.atoms.index(atom)+1 for atom in path[0::2]]
