@@ -399,7 +399,7 @@ class KineticsDatabase(object):
             reactionList = filterReactions(reactants, products, reactionList)
         return reactionList
 
-    def generateReactionsFromFamilies(self, reactants, products, only_families=None):
+    def generateReactionsFromFamilies(self, reactants, products, only_families=None, deleteAtomLabels=True):
         """
         Generate all reactions between the provided list of one or two
         `reactants`, which should be :class:`Molecule` objects. This method
@@ -416,7 +416,7 @@ class KineticsDatabase(object):
         reactionList = []
         for label, family in self.families.iteritems():
             if only_families is None or label in only_families:
-                reactionList.extend(family.generateReactions(reactants))
+                reactionList.extend(family.generateReactions(reactants, deleteAtomLabels=deleteAtomLabels))
         if products:
             reactionList = filterReactions(reactants, products, reactionList)
         return reactionList

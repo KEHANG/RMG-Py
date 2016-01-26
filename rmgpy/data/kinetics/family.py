@@ -1227,7 +1227,7 @@ class KineticsFamily(Database):
         elif isinstance(struct, Group):
             return reactant.findSubgraphIsomorphisms(struct)
 
-    def generateReactions(self, reactants):
+    def generateReactions(self, reactants, deleteAtomLabels=True):
         """
         Generate all reactions between the provided list of one or two
         `reactants`, which should be either single :class:`Molecule` objects
@@ -1241,12 +1241,12 @@ class KineticsFamily(Database):
         reactionList = []
         
         # Forward direction (the direction in which kinetics is defined)
-        reactionList.extend(self.__generateReactions(reactants, forward=True))
+        reactionList.extend(self.__generateReactions(reactants, forward=True, deleteAtomLabels=deleteAtomLabels))
         
         if self.ownReverse:
             # for each reaction, make its reverse reaction and store in a 'reverse' attribute
             for rxn in reactionList:
-                reactions = self.__generateReactions(rxn.products, products=rxn.reactants, forward=True)
+                reactions = self.__generateReactions(rxn.products, products=rxn.reactants, forward=True, deleteAtomLabels=deleteAtomLabels)
                 if len(reactions) != 1:
                     logging.error("Expecting one matching reverse reaction, not {0} in reaction family {1} for forward reaction {2}.\n".format(len(reactions), self.label, str(rxn)))
                     logging.error("There is likely a bug in the RMG-database kinetics reaction family involving a missing group, missing atomlabels, forbidden groups, etc.")
@@ -1263,7 +1263,7 @@ class KineticsFamily(Database):
                     # been formed in the first place.
                     tempObject = self.forbidden
                     self.forbidden = ForbiddenStructures()  # Initialize with empty one
-                    reactions = self.__generateReactions(rxn.products, products=rxn.reactants, forward=True)
+                    reactions = self.__generateReactions(rxn.products, products=rxn.reactants, forward=True, deleteAtomLabels=deleteAtomLabels)
                     if len(reactions) != 1:
                         logging.error("Still experiencing error: Expecting one matching reverse reaction, not {0} in reaction family {1} for forward reaction {2}.\n".format(len(reactions), self.label, str(rxn)))
                         raise KineticsError("Did not find reverse reaction in reaction family {0} for reaction {1}.".format(self.label, str(rxn)))
@@ -1279,7 +1279,7 @@ class KineticsFamily(Database):
             
         else: # family is not ownReverse
             # Reverse direction (the direction in which kinetics is not defined)
-            reactionList.extend(self.__generateReactions(reactants, forward=False))
+            reactionList.extend(self.__generateReactions(reactants, forward=False, deleteAtomLabels=deleteAtomLabels))
             
         # Return the reactions as containing Species objects, not Molecule objects
         for reaction in reactionList:
@@ -1294,12 +1294,12 @@ class KineticsFamily(Database):
 
         return reactionList
     
-    def calculateDegeneracy(self, reaction):
+    def calculateDegeneracy(self, reaction, deleteAtomLabels=True):
         """
         For a `reaction` given in the direction in which the kinetics are
         defined, compute the reaction-path degeneracy.
         """
-        reactions = self.__generateReactions(reaction.reactants, products=reaction.products, forward=True)
+        reactions = self.__generateReactions(reaction.reactants, products=reaction.products, forward=True, deleteAtomLabels=deleteAtomLabels)
         if len(reactions) != 1:
             for reactant in reaction.reactants:
                 logging.error(reactant)
@@ -1310,7 +1310,7 @@ class KineticsFamily(Database):
                                  'but generated {2}').format(reaction, self.label, len(reactions)))
         return reactions[0].degeneracy
         
-    def __generateReactions(self, reactants, products=None, forward=True):
+    def __generateReactions(self, reactants, products=None, forward=True, deleteAtomLabels=True):
         """
         Generate a list of all of the possible reactions of this family between
         the list of `reactants`. The number of reactants provided must match
@@ -1511,12 +1511,12 @@ class KineticsFamily(Database):
             if not forward:
                 reaction.degeneracy = self.calculateDegeneracy(reaction)
 
-            # Unlabel the atoms
-            for label, atom in reaction.labeledAtoms:
-                atom.label = ''
-            
-            # We're done with the labeled atoms, so delete the attribute
-            del reaction.labeledAtoms
+            if deleteAtomLabels:
+                # Unlabel the atoms
+                for label, atom in reaction.labeledAtoms:
+                    atom.label = ''
+                # We're done with the labeled atoms, so delete the attribute
+                del reaction.labeledAtoms
             
         # This reaction list has only checked for duplicates within itself, not
         # with the global list of reactions
