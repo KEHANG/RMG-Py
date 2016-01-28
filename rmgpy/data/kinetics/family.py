@@ -1509,7 +1509,7 @@ class KineticsFamily(Database):
             reaction.pairs = self.getReactionPairs(reaction)
             reaction.template = self.getReactionTemplateLabels(reaction)
             if not forward:
-                reaction.degeneracy = self.calculateDegeneracy(reaction)
+                reaction.degeneracy = self.calculateDegeneracy(reaction, deleteAtomLabels=deleteAtomLabels)
 
             if deleteAtomLabels:
                 # Unlabel the atoms
