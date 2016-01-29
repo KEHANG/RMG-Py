@@ -1508,11 +1508,12 @@ class KineticsFamily(Database):
         for reaction in rxnList:
             
             # Restore the labeled atoms long enough to generate some metadata
-            for reactant in reaction.reactants:
+            for reactant in reaction.reactants + reaction.products:
                 reactant.clearLabeledAtoms()
+
             for label, atom in reaction.labeledAtoms:
                 atom.label = label
-            
+
             # Generate metadata about the reaction that we will need later
             reaction.pairs = self.getReactionPairs(reaction)
             reaction.template = self.getReactionTemplateLabels(reaction)
