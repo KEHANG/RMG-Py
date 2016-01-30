@@ -1508,7 +1508,7 @@ class KineticsFamily(Database):
         for reaction in rxnList:
             
             # Restore the labeled atoms long enough to generate some metadata
-            for reactant in reaction.reactants + reaction.products:
+            for reactant in reaction.reactants:
                 reactant.clearLabeledAtoms()
 
             for label, atom in reaction.labeledAtoms:
