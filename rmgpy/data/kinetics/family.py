@@ -1829,7 +1829,7 @@ class KineticsFamily(Database):
 
         return template
 
-    def getLabeledReatantsAndProdcuts(self, reactants, products):
+    def getLabeledReactantsAndProducts(self, reactants, products):
         """
         Given `reactants`, a list of :class:`Molecule` objects, and products, a list of 
         :class:`Molecule` objects, return two new lists of :class:`Molecule` objects with 
