@@ -551,10 +551,16 @@ class RMG(util.Subject):
                     rxnSysBimolecularThreshold=reactionSystem.bimolecularThreshold,
                     rxnSysRecombinationThreshold=reactionSystem.recombinationThreshold)
 
-        self.reactionModel.enlarge(reactEdge=True, 
+        forcedRecombinationProducts = self.reactionModel.enlarge(reactEdge=True, 
             unimolecularReact=self.unimolecularReact, 
             bimolecularReact=self.bimolecularReact,
             recombinationReact=self.recombinationReact)
+
+        # Force any generated recombination products into the core
+        logging.info('Forcing recombination products into the core...')
+        for objectToEnlarge in forcedRecombinationProducts:
+            self.reactionModel.enlarge(objectToEnlarge)
+        logging.info('Done forcing recombination products into the core.')
 
         logging.info('Completed initial enlarge edge step...')
         self.saveEverything()
@@ -654,10 +660,15 @@ class RMG(util.Subject):
                     else:
                         self.updateReactionThresholdAndReactFlags()
                     
-                    self.reactionModel.enlarge(reactEdge=True, 
+                    forcedRecombinationProducts = self.reactionModel.enlarge(reactEdge=True, 
                             unimolecularReact=self.unimolecularReact, 
                             bimolecularReact=self.bimolecularReact,
                             recombinationReact=self.recombinationReact)
+                    # Force any generated recombination products into the core
+                    logging.info('Forcing recombination products into the core...')
+                    for objectToEnlarge in forcedRecombinationProducts:
+                        self.reactionModel.enlarge(objectToEnlarge)
+                    logging.info('Done forcing recombination products into the core.')
 
             self.saveEverything()
 

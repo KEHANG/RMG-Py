@@ -707,6 +707,7 @@ class CoreEdgeReactionModel:
         numOldEdgeReactions = len(self.edge.reactions)
         reactionsMovedFromEdge = []
         self.newReactionList = []; self.newSpeciesList = []
+        forcedRecombinationProducts = []
 
         if reactEdge is False:
             # We are adding core species 
@@ -791,10 +792,12 @@ class CoreEdgeReactionModel:
                     if recombinationReact[i,j]:
                         # Make sure both species are radicals first
                         if self.coreRadicalList[i] and self.coreRadicalList[j]:
+                            numPrevEdgeSpecies = len(self.edge.species)
                             reactions = list(react(self.core.species[i].copy(deep=True), [self.core.species[j]], recombination=True))
                             # Consider the latest added core species as the 'new' species
                             reactions = [self.inflate(reaction) for reaction in reactions]
                             self.processNewReactions(reactions, self.core.species[j], None)
+                            forcedRecombinationProducts.extend(self.edge.species[numPrevEdgeSpecies:])
         ################################################################
         # Begin processing the new species and reactions
             
@@ -870,6 +873,7 @@ class CoreEdgeReactionModel:
         )
 
         logging.info('')
+        return forcedRecombinationProducts
 
     def processNewReactions(self, newReactions, newSpecies, pdepNetwork=None):
         """
