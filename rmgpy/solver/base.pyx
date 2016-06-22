@@ -511,8 +511,8 @@ cdef class ReactionSystem(DASx):
                 # Set the maximum bimolecular rate to be 1e7 m^3/mol*s, or 1e13 cm^3/mol*s
                 bimolecularThresholdVal = coreFluxThresholdVal / 1e7 
                 # Set the maximum recombination rate to be much higher, due to the sensitivity to radical sink reactions
-                # This is set higher than bimolecular diffusion rate by 1e4
-                recombinationThresholdVal = coreFluxThresholdVal / 1e11
+                # This is set higher than bimolecular diffusion rate by 1e5
+                recombinationThresholdVal = coreFluxThresholdVal / 1e12
                 coreSpeciesConcentrations = self.coreSpeciesConcentrations
                 for i in xrange(numCoreSpecies):
                     if not unimolecularThreshold[i]:
