@@ -1000,6 +1000,7 @@ class ThermoDatabase(object):
         from rmgpy.rmg.input import getInput
         
         thermo0 = None
+        thermo1 = None
         
         thermo0 = self.getThermoDataFromLibraries(species)
         try:
@@ -1012,6 +1013,12 @@ class ThermoDatabase(object):
             logging.debug("Found thermo for {0} in {1}".format(species.label,thermo0[0].comment.lower()))
             assert len(thermo0) == 3, "thermo0 should be a tuple at this point: (thermoData, library, entry)"
             thermo0 = thermo0[0]
+            
+            
+            # Check that number of resonance isomers is more than one to see if we need to reorder them
+            if len(species.molecule) > 1:
+                thermo1 = thermo0
+                thermo0 = None  # Reset thermo0 so that it can be estimated via group additivity and therefore re-order the isomers
             
         elif quantumMechanics:
             original_molecule = species.molecule[0]
@@ -1091,6 +1098,11 @@ class ThermoDatabase(object):
             else:
                 # Saturated molecule, estimate it via groups since we've already checked libraries much earlier
                 thermo0 = self.getThermoDataFromGroups(species)
+                
+                
+            if thermo1:
+                # We replace with the original library thermo value if we had to sort the resonance isomers
+                thermo0 = thermo1
                 
         # Make sure to calculate Cp0 and CpInf if it wasn't done already
         findCp0andCpInf(species, thermo0)
