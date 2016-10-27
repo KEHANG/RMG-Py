@@ -14,20 +14,10 @@ addons:
     - git
 
 before_install:
-  # Set up anaconda
-  - wget http://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p $HOME/miniconda
-  - export PATH=$HOME/miniconda/bin:$PATH
-  - export PYTHONPATH=$TRAVIS_BUILD_DIR/RMG-Py:$PYTHONPATH
-  # Update conda itself
-  - conda update --yes conda
-  - cd ..
-  - git clone https://github.com/ReactionMechanismGenerator/RMG-database.git
-  - cd RMG-Py
+  - chmod +x before_install.sh
+  - . ./before_install.sh
 
 install:
-  - conda env create -f environment_linux.yml
   - source activate rmg_env
   - yes 'Yes' | $HOME/miniconda/envs/rmg_env/bin/mopac $MOPACKEY > /dev/null
   - make
