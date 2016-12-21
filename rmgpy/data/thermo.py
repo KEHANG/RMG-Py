@@ -1467,13 +1467,7 @@ class ThermoDatabase(object):
         matched_group_thermodata, matched_entry = self.__addRingCorrectionThermoDataFromTree(None, self.groups['polycyclic'], molecule, polyring)
         matched_group = matched_entry.item
         
-        # if partial match (non-H atoms number same between 
-        # polycylic ring in molecule and match group)
-        # otherwise, apply heuristic algorithm
-        if not isPolyringPartialMatched(polyring, matched_group):
-            thermoData = addThermoData(thermoData, matched_group_thermodata, groupAdditivity=True)
-        else:
-            self.__addPolyRingCorrectionThermoDataFromHeuristic(thermoData, polyring)
+        thermoData = addThermoData(thermoData, matched_group_thermodata, groupAdditivity=True)
             
 
     def __addPolyRingCorrectionThermoDataFromHeuristic(self, thermoData, polyring):
