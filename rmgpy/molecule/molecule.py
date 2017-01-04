@@ -1623,6 +1623,31 @@ class Molecule(Graph):
         
         return group
 
+    def toGenericGroup(self):
+        """
+        This method converts a list of atoms in a Molecule to a Group object.
+        """
+        
+        # Create GroupAtom object for each atom in the molecule
+        groupAtoms = OrderedDict()# preserver order of atoms in original container
+        for atom in self.atoms:
+            groupAtoms[atom] = gr.GroupAtom(atomType=[atomTypes['R']],
+                                         radicalElectrons=[atom.radicalElectrons],
+                                         charge=[atom.charge],
+                                         lonePairs=[atom.lonePairs]
+                                         )
+                    
+        group = gr.Group(atoms=groupAtoms.values(), multiplicity=[self.multiplicity])
+        
+        # Create GroupBond for each bond between atoms in the molecule
+        for atom in self.atoms:
+            for bondedAtom, bond in atom.edges.iteritems():
+                group.addBond(gr.GroupBond(groupAtoms[atom],groupAtoms[bondedAtom], order=[bond.order]))
+            
+        group.update()
+        
+        return group
+
     def getAromaticSSSR(self):
         """
         Returns the smallest set of smallest aromatic rings
