@@ -19,8 +19,8 @@ epochs = 150
 
 # Load the datasets
 datasets =  [
-			('sdata134k', 'polycyclic_2954_table', 0.1), 
-			('sdata134k', 'cyclic_O_only_table', 0.1)
+			('rmg', 'sdata134k', 'polycyclic_2954_table', 0.1), 
+			('rmg', 'sdata134k', 'cyclic_O_only_table', 0.1)
 			]
 X_test, y_test, X_train, y_train = prepare_full_train_data_from_multiple_datasets(datasets, using_ecfp=True)
 
