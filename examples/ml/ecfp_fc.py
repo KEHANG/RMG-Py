@@ -70,3 +70,5 @@ objective_score = model.evaluate(np.array(X_test), np.array(y_test), batch_size=
 
 # objective_score is a tuple containing the loss as well as the accuracy
 print ("\nLoss on test set:"  + str(objective_score))
+
+model.save_weights('ecfp_fc.h5', overwrite = True)
